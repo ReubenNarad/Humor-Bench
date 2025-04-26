@@ -149,7 +149,7 @@ HTML_TEMPLATE = """
 
 <div class="header">
     <div class="title-container">
-        <h1>Interactive Benchmark Report</h1>
+        <h1>Humor Bench Results</h1>
         <div class="metadata">
             Generated: {timestamp} | Autograder: {autograder_model}
         </div>
@@ -172,7 +172,7 @@ HTML_TEMPLATE = """
                 <option value="lmarena_elo_score">LM Arena ELO Score</option>
             </select>
             <div class="checkbox-wrapper">
-                <input type="checkbox" id="log-scale-x">
+                <input type="checkbox" id="log-scale-x" checked>
                 <label for="log-scale-x" style="font-weight: normal;">Log Scale</label>
             </div>
         </div>

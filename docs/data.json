@@ -170,6 +170,23 @@
         "lmarena_elo_score": 1293
     },
     {
+        "display_name": "Claude 3.7 (think: 4096)",
+        "explainer_model": "claude-3-7-sonnet-latest",
+        "autograder_model": "gpt-4o",
+        "pass_rate_per_row": 0.8096192384769539,
+        "pass_rate_per_caption_all": 0.7378640776699029,
+        "pass_rate_per_caption_some": 0.8241639697950378,
+        "total_cost": 5.5528935,
+        "avg_cost_per_row": 0.011128043086172344,
+        "plot_color": "#e3c771",
+        "explainer_family": "anthropic",
+        "num_rows": 499,
+        "num_captions": 309,
+        "gpqa_score": 0.797,
+        "arc_agi_score": 0.14,
+        "lmarena_elo_score": 1293
+    },
+    {
         "display_name": "Claude 3.7 (think: 1024)",
         "explainer_model": "claude-3-7-sonnet-latest",
         "autograder_model": "gpt-4o",
