@@ -16,7 +16,7 @@ from main_benchmark import analyze_benchmark_results # Reuse analysis function
 
 # --- Constants ---
 BASE_OUTPUT_DIR = "runs"
-MODEL_PRICES_PATH = "model_prices.json" # Needed for analysis
+MODEL_PRICES_PATH = "model_data/model_prices.json" # Needed for analysis
 
 
 async def regrade_single_row(autograder, row):

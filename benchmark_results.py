@@ -56,7 +56,7 @@ MODEL_NICKNAMES = {
     # These will be generated dynamically below
 }
 
-MODEL_PRICES_PATH = "model_prices.json"
+MODEL_PRICES_PATH = "model_data/model_prices.json"
 BASE_ANALYSIS_DIR = "analysis" # Base directory for all analysis output
 RUNS_SUBDIR = "runs" # Subdirectory within BASE_ANALYSIS_DIR for individual runs
 
@@ -335,7 +335,7 @@ def generate_benchmark_data(run_files, prices_path):
 
     # --- Load GPQA scores first ---
     # Load GPQA scores from external file
-    gpqa_file_path = "models_gpqa.json"
+    gpqa_file_path = "model_data/models_gpqa.json"
     try:
         with open(gpqa_file_path, 'r') as f:
             gpqa_data = json.load(f)
@@ -368,7 +368,7 @@ def generate_benchmark_data(run_files, prices_path):
         print("GPQA scores will not be available in the report")
 
     # --- Load ARC-AGI scores ---
-    arc_agi_file_path = "models_ARC_AGI.json"
+    arc_agi_file_path = "model_data/models_ARC_AGI.json"
     try:
         with open(arc_agi_file_path, 'r') as f:
             arc_agi_data = json.load(f)
@@ -401,7 +401,7 @@ def generate_benchmark_data(run_files, prices_path):
         print("ARC-AGI scores will not be available in the report")
 
     # --- Load LM Arena ELO scores ---
-    lmarena_file_path = "lmarena_elo_4_22_25.json"
+    lmarena_file_path = "model_data/lmarena_elo_4_22_25.json"
     try:
         with open(lmarena_file_path, 'r') as f:
             lmarena_data = json.load(f)

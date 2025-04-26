@@ -14,7 +14,7 @@ from utils import MessageChain
 import traceback
 
 # --- Constants ---
-MODEL_PRICES_PATH = "model_prices.json"
+MODEL_PRICES_PATH = "model_data/model_prices.json"
 DEFAULT_INPUT_CSV = "comprehensive_annotations.csv"
 OUTPUT_DIR = "runs"
 
