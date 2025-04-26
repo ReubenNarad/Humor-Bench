@@ -1,4 +1,0 @@
-explainer_model,autograder_model,num_examples,pass_rate,total_cost,avg_cost_per_example,source_file,display_name,explainer_family,plot_color
-claude-3-7-sonnet-latest,gpt-4o,499,0.8096192384769539,5.5528935,0.011128043086172344,20250416_204832_claude_thinking_budget_4096_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv,Claude (thinking: 4096),anthropic,#e3c771
-claude-3-7-sonnet-latest,gpt-4o,499,0.8296593186372746,5.286996,0.01059518236472946,20250416_200436_claude_thinking_budget_2048_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv,Claude (thinking: 2048),anthropic,#e3c771
-claude-3-7-sonnet-latest,gpt-4o,499,0.8356713426853707,4.8676485,0.009754806613226452,20250416_193729_claude_thinking_budget_1024_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv,Claude (thinking: 1024),anthropic,#e3c771
