@@ -21,6 +21,10 @@ var/
 .installed.cfg
 *.egg
 
+# Benchmark specific
+/runs/
+/autograder_runs/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -43,5 +47,7 @@ Thumbs.db
 *.log
 *.tmp
 notes.txt
-legacy/
-analysis/
+/legacy/
+/analysis/
+# Ensure docs directory is not ignored
+!docs/
