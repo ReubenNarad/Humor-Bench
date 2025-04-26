@@ -1,0 +1,10 @@
+explainer_model,autograder_model,num_examples,pass_rate,total_cost,avg_cost_per_example,source_file,explainer_family,plot_color
+Qwen-Qwen2-5-72B-Instruct-Turbo,gpt-4o,499,0.6112224448897795,1.1768771,0.002358471142284569,20250416_111359_qwen_explainer_vs_gpt4o_grader_exp-Qwen_Qwen2_5_72B_Instruct_Turbo_ag-gpt_4o.csv,together,lightblue
+meta-llama-Llama-4-Scout-17B-16E-Instruct,gpt-4o,499,0.6332665330661322,1.05934316,0.0021229321843687374,20250416_123510_llama4_scout_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Scout_17B_16E_Instruct_ag-gpt_4o.csv,together,lightblue
+o3-mini,gpt-4o,499,0.6392785571142284,2.2670413,0.004543168937875751,20250409_234703_o3mini_explainer_vs_gpt4o_grader_exp-o3_mini_ag-gpt_4o.csv,openai,lightgreen
+meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8,gpt-4o,499,0.6673346693386774,1.05301288,0.00211024625250501,20250416_102802_llama4_maverick_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Maverick_17B_128E_Instruct_FP8_ag-gpt_4o.csv,together,lightblue
+gemini-1-5-pro,gpt-4o,499,0.687374749498998,1.3681400000000001,0.0027417635270541086,20250410_143220_gemini_explainer_vs_gpt4o_grader_exp-gemini_1_5_pro_ag-gpt_4o.csv,gemini,mediumpurple
+gpt-4o,gpt-4o,499,0.7454909819639278,2.022075,0.004052254509018036,20250410_093249_gpt4o_explainer_vs_gpt4o_grader_exp-gpt_4o_ag-gpt_4o.csv,openai,lightgreen
+o4-mini,gpt-4o,499,0.7735470941883767,1.940822,0.003889422845691383,20250416_152132_o4-mini_explainer_vs_gpt4o_grader_exp-o4_mini_ag-gpt_4o.csv,openai,lightgreen
+gemini-2-5-pro-preview-03-25,gpt-4o,499,0.7995991983967936,1.0057,0.002015430861723447,20250409_220748_gemini_explainer_vs_gpt4o_grader_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o.csv,gemini,mediumpurple
+claude-3-7-sonnet-latest,gpt-4o,499,0.8036072144288577,2.6486275,0.005307870741482965,20250409_231147_claude_explainer_vs_gpt4o_grader_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv,anthropic,#e3c771

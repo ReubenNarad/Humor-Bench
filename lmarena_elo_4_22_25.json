@@ -1,0 +1,38 @@
+{
+  "gpt-4o": {
+    "score": 1407
+  },
+  "gpt-4o-mini": {
+    "score": 1272
+  },
+  "claude-3-7-sonnet-latest": {
+    "score": 1293
+  },
+  "gemini-2-5-pro-preview-03-25": {
+    "score": 1439
+  },
+  "gemini-1-5-pro": {
+    "score": 1302
+  },
+  "o1": {
+    "score": 1350
+  },
+  "o3": {
+    "score": null
+  },
+  "o4-mini": {
+    "score": null
+  },
+  "o3-mini": {
+    "score": 1305
+  },
+  "deepseek-ai/DeepSeek-V3": {
+    "score": null
+  },
+  "meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8": {
+    "score": 1271
+  },
+  "meta-llama-Llama-4-Scout-17B-16E-Instruct": {
+    "score": null
+  }
+}

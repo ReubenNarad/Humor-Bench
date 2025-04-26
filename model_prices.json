@@ -1,0 +1,58 @@
+{
+  "gpt-4o": {
+    "input $/M": 2.50,
+    "output $/M": 10.00
+  },
+  "gpt-4o-mini": {
+    "input $/M": 0.15,
+    "output $/M": 0.60
+  },
+  "claude-3-7-sonnet-latest": {
+    "input $/M": 3.00,
+    "output $/M": 15.00
+  },
+  "gemini-2.5-pro-preview-03-25": {
+    "input $/M": 1.25,
+    "output $/M": 10.00
+  },
+  "gemini-1.5-pro": {
+    "input $/M": 1.25,
+    "output $/M": 5.00
+  },
+  "o1": {
+    "input $/M": 15.00,
+    "output $/M": 60.00
+  },
+  "o3": {
+    "input $/M": 10.00,
+    "output $/M": 40.00
+  },
+  "o4-mini": {
+    "input $/M": 1.10,
+    "output $/M": 4.40
+  },
+  "o3-mini": {
+    "input $/M": 1.10,
+    "output $/M": 4.40
+  },
+  "deepseek-ai/DeepSeek-R1": {
+    "input $/M": 3.00,
+    "output $/M": 7.00
+  },
+  "deepseek-ai/DeepSeek-V3": {
+    "input $/M": 1.25,
+    "output $/M": 1.25
+  },
+  "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8": {
+    "input $/M": 0.27,
+    "output $/M": 0.85
+  },
+  "meta-llama/Llama-4-Scout-17B-16E-Instruct": {
+    "input $/M": 0.18,
+    "output $/M": 0.59
+  },
+  "Qwen/Qwen2.5-72B-Instruct-Turbo": {
+    "input $/M": 1.20,
+    "output $/M": 1.20
+  }
+}

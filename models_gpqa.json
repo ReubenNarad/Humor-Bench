@@ -1,0 +1,50 @@
+{
+    "gpt-4o": {
+      "score": 0.506,
+      "source_url": "https://sider.ai/blog/o1/openai-o1-preview#gpqa-diamond [oai_citation_attribution:0‡sider.ai](https://sider.ai/blog/o1/openai-o1-preview#:~:text=OpenAI%20Unveils%20o1%20Models%3A%20A,...%20ChatGPT%20Plus)"
+    },
+    "gpt-4o-mini": {
+      "score": 0.402,
+      "source_url": "https://openai.com/index/gpt-4-1#appendix [oai_citation_attribution:1‡openai.com](https://openai.com/index/gpt-4-1/#:~:text=Category%20GPT,85.1)"
+    },
+    "claude-3-7-sonnet-latest": {
+      "score": 0.797,
+      "source_url": "https://deepmind.google/technologies/gemini/pro#gpqa-diamond [oai_citation_attribution:2‡deepmind.google](https://deepmind.google/technologies/gemini/pro#:~:text=Science%20%20GPQA%20diamond)"
+    },
+    "gemini-2-5-pro-preview-03-25": {
+      "score": 0.802,
+      "source_url": "https://deepmind.google/technologies/gemini/pro#gpqa-diamond [oai_citation_attribution:3‡deepmind.google](https://deepmind.google/technologies/gemini/pro#:~:text=Science%20%20GPQA%20diamond)"
+    },
+    "gemini-1-5-pro": {
+      "score": 0.715,
+      "source_url": "https://deepmind.google/technologies/gemini/pro#gpqa-diamond [oai_citation_attribution:4‡deepmind.google](https://deepmind.google/technologies/gemini/pro#:~:text=Science%20%20GPQA%20diamond)"
+    },
+    "o1": {
+      "score": 0.78,
+      "source_url": "https://www.helicone.ai/blog/o3-and-o4-mini-for-developers#performance-benchmarks [oai_citation_attribution:5‡helicone.ai](https://www.helicone.ai/blog/o3-and-o4-mini-for-developers#:~:text=GPQA%20Diamond%20Graduate,N%2FA)"
+    },
+    "o3": {
+      "score": 0.833,
+      "source_url": "https://www.helicone.ai/blog/o3-and-o4-mini-for-developers#performance-benchmarks [oai_citation_attribution:6‡helicone.ai](https://www.helicone.ai/blog/o3-and-o4-mini-for-developers#:~:text=GPQA%20Diamond%20Graduate,N%2FA)"
+    },
+    "o4-mini": {
+      "score": 0.814,
+      "source_url": "https://www.helicone.ai/blog/o3-and-o4-mini-for-developers#performance-benchmarks [oai_citation_attribution:7‡helicone.ai](https://www.helicone.ai/blog/o3-and-o4-mini-for-developers#:~:text=GPQA%20Diamond%20Graduate,N%2FA)"
+    },
+    "o3-mini": {
+      "score": 0.77,
+      "source_url": "https://www.helicone.ai/blog/o3-and-o4-mini-for-developers#performance-benchmarks [oai_citation_attribution:8‡helicone.ai](https://www.helicone.ai/blog/o3-and-o4-mini-for-developers#:~:text=GPQA%20Diamond%20Graduate,N%2FA)"
+    },
+    "deepseek-ai/DeepSeek-V3": {
+      "score": 0.684,
+      "source_url": "https://lambda.ai/blog/deepseek-v3-0324-live-on-lambda#gpqa-diamond [oai_citation_attribution:9‡lambda.ai](https://lambda.ai/blog/deepseek-v3-0324-live-on-lambda#:~:text=%2A%20MATH,3.7)"
+    },
+    "meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8": {
+      "score": 0.698,
+      "source_url": "https://huggingface.co/blog/llama4-release#evaluation-scores [oai_citation_attribution:10‡huggingface.co](https://huggingface.co/blog/llama4-release#:~:text=Evaluation%20results%20confirm%20the%20strength,respectively) [oai_citation_attribution:11‡huggingface.co](https://huggingface.co/blog/llama4-release#:~:text=art%20performance%20that%20significantly%20outperforms,respectively)"
+    },
+    "meta-llama-Llama-4-Scout-17B-16E-Instruct": {
+      "score": 0.572,
+      "source_url": "https://huggingface.co/blog/llama4-release#evaluation-scores [oai_citation_attribution:12‡huggingface.co](https://huggingface.co/blog/llama4-release#:~:text=art%20performance%20that%20significantly%20outperforms,respectively) [oai_citation_attribution:13‡huggingface.co](https://huggingface.co/blog/llama4-release#:~:text=For%20instance%2C%20on%20reasoning%20and,respectively)"
+    }
+  }

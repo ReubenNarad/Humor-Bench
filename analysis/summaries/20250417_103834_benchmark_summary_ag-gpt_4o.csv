@@ -1,0 +1,4 @@
+explainer_model,autograder_model,num_examples,pass_rate,total_cost,avg_cost_per_example,source_file,display_name,explainer_family,plot_color
+o4-mini,gpt-4o,499,0.7535070140280561,1.001935,0.0020078857715430864,20250417_102543_o4-mini_low_exp-o4_mini_ag-gpt_4o.csv,o4-mini low,openai,#89e095
+o4-mini,gpt-4o,499,0.7675350701402806,1.0032925,0.0020106062124248497,20250417_102740_o4-mini_medium_exp-o4_mini_ag-gpt_4o.csv,o4-mini,openai,#89e095
+o4-mini,gpt-4o,499,0.7775551102204409,1.005425,0.002014879759519038,20250417_103013_o4-mini_high_exp-o4_mini_ag-gpt_4o.csv,o4-mini high,openai,#89e095
