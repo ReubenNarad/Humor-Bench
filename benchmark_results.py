@@ -27,6 +27,9 @@ RUN_FILES_TO_ANALYZE = [
     "runs/main/20250416_152132_o4-mini_explainer_vs_gpt4o_grader_exp-o4_mini_ag-gpt_4o.csv",
     "runs/main/20250416_182853_o3_explainer_vs_gpt4o_grader_exp-o3_ag-gpt_4o.csv",
     "runs/main/20250416_184110_o1_explainer_vs_gpt4o_grader_exp-o1_ag-gpt_4o.csv",
+    "runs/main/20250428_145241_deepseek_v3_exp-deepseek_ai_DeepSeek_V3_ag-gpt_4o.csv",
+    "runs/main/20250428_151728_deepseek_r1_exp-deepseek_ai_DeepSeek_R1_ag-gpt_4o.csv",
+
 
     # Claude thinking budget experiment
     "runs/claude_thinking_experiment/20250416_193729_claude_thinking_budget_1024_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
@@ -38,6 +41,9 @@ RUN_FILES_TO_ANALYZE = [
     # "runs/openai_effort_experiment/20250417_102740_o4-mini_medium_exp-o4_mini_ag-gpt_4o.csv",
     # "runs/openai_effort_experiment/20250417_103013_o4-mini_high_exp-o4_mini_ag-gpt_4o.csv",
 ]
+
+# Number of hard questions to select
+HARD_SUBSET_SIZE = 100
 
 # Map extracted model names (after replacing _) to desired nicknames for the plot
 MODEL_NICKNAMES = {
@@ -52,6 +58,8 @@ MODEL_NICKNAMES = {
     "meta-llama-Llama-4-Scout-17B-16E-Instruct": "Llama 4 Scout",
     "o1": "o1", # Base nickname for o1
     "o3": "o3", # Base nickname for o3
+    "deepseek-ai-DeepSeek-V3": "DeepSeek V3", # Add nickname for DeepSeek V3
+    "deepseek-ai-DeepSeek-R1": "DeepSeek R1", # Add nickname for DeepSeek R1
     # Add specialized nicknames for Claude with thinkin  budgets
     # These will be generated dynamically below
 }
@@ -97,7 +105,7 @@ FAMILY_COLORS = {
     'openai': '#89e095',
     'gemini': '#8055e6', # Using mediumpurple as lightpurple can be very pale
     'together': 'lightblue',  # Using lightblue as blue can be dark
-    # 'deepseek': 'orange',    # Adding a color for deepseek if inferred separately
+    'deepseek': 'lightblue',    # Adding a color for deepseek if inferred separately
     'unknown': 'grey'       # Fallback color
 }
 
@@ -143,6 +151,11 @@ def generate_benchmark_data(run_files, prices_path):
     """Analyzes multiple benchmark runs and generates data for interactive report."""
     run_summaries = []
     autograder_models_found = set()
+    
+    # Dictionary to track passing rate per caption across all models
+    caption_pass_counts = {}
+    caption_appearance_counts = {}
+    all_data_frames = []  # Store all valid dataframes for hard subset determination
 
     # Load prices
     model_prices = {}
@@ -179,7 +192,24 @@ def generate_benchmark_data(run_files, prices_path):
             if valid_df.empty:
                  print(f"  Skipping: No valid 'PASS' or 'FAIL' judgments found.")
                  continue
+                 
+            # Store original filename in the dataframe for easier identification 
+            valid_df = valid_df.copy()
+            if 'source_file' not in valid_df.columns:
+                valid_df['source_file'] = filename  # Add filename to help with identification later
+                
+            # Store valid dataframe for hard subset determination with source information
+            all_data_frames.append(valid_df)
 
+            # Update caption pass counts for determining hard questions
+            for caption, group in valid_df.groupby('caption'):
+                passes = sum(group['autograder_judgment'] == 'PASS')
+                if caption not in caption_pass_counts:
+                    caption_pass_counts[caption] = 0
+                    caption_appearance_counts[caption] = 0
+                caption_pass_counts[caption] += passes
+                caption_appearance_counts[caption] += len(group)
+                
             # --- Calculate ALL PASS Rate Metrics ---
             num_rows = len(valid_df)
             passes_row = sum(valid_df['autograder_judgment'] == 'PASS')
@@ -258,7 +288,105 @@ def generate_benchmark_data(run_files, prices_path):
     summary_df = pd.DataFrame(run_summaries)
     # Sort by a default metric initially, e.g., per_row pass rate
     summary_df = summary_df.sort_values(by='pass_rate_per_row', ascending=True)
-
+    
+    # --- Find Hard Question Subset ---
+    try:
+        # Instead of tracking captions, we'll track individual rows (elements)
+        # Combine all dataframes to get element-level metrics
+        if all_data_frames:
+            combined_df = pd.concat(all_data_frames)
+            
+            # Group by element, not caption
+            element_groups = combined_df.groupby(['caption', 'element'])
+            element_pass_rates = {}
+            
+            # Calculate pass rate for each element across all models
+            for (caption, element), group in element_groups:
+                element_key = (caption, element)
+                passes = sum(group['autograder_judgment'] == 'PASS')
+                total = len(group)
+                # Only consider elements that appear in all runs
+                if total == len(run_files):
+                    element_pass_rates[element_key] = passes / total
+            
+            if not element_pass_rates:
+                print("\nWarning: No elements appear in all runs. Cannot identify hard subset.")
+                hard_elements = []
+            else:
+                # Sort elements by pass rate
+                sorted_elements = sorted(element_pass_rates.items(), key=lambda x: x[1])
+                
+                # Take the N hardest elements (or all if fewer than N)
+                subset_size = min(HARD_SUBSET_SIZE, len(sorted_elements))
+                hard_elements = [element_key for element_key, _ in sorted_elements[:subset_size]]
+                
+                # Filter combined dataframe for hard elements
+                hard_subset_df = combined_df[combined_df.apply(lambda row: (row['caption'], row['element']) in hard_elements, axis=1)]
+                
+                if not hard_subset_df.empty:
+                    # Save hard subset to CSV
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    hard_subset_dir = os.path.join(BASE_ANALYSIS_DIR, "hard_subsets")
+                    os.makedirs(hard_subset_dir, exist_ok=True)
+                    hard_subset_path = os.path.join(hard_subset_dir, f"{timestamp}_hard_elements_{subset_size}.csv")
+                    hard_subset_df.to_csv(hard_subset_path, index=False)
+                    print(f"\nSaved hard subset ({len(hard_elements)} elements) to: {hard_subset_path}")
+                else:
+                    print("\nWarning: Hard subset dataframe is empty. No CSV saved.")
+                    hard_elements = []
+        else:
+            print("\nNo valid dataframes found for hard subset determination.")
+            hard_elements = []
+    except Exception as e:
+        print(f"\nError calculating hard subset: {e}")
+        hard_elements = []  # Safety fallback
+    
+    # Only calculate hard subset metrics if we have hard elements
+    if hard_elements:
+        # Calculate metrics for each model on hard subset
+        for i, summary in enumerate(run_summaries):
+            model_name = summary['explainer_model']
+            model_file = summary['source_file']
+            
+            # Check a dataframe from original file - this is more reliable
+            # First print columns to debug
+            if i == 0 and len(all_data_frames) > 0:
+                print(f"DEBUG: Dataframe columns: {all_data_frames[0].columns.tolist()}")
+                
+            # Modified approach to avoid source_file column issue:
+            # Instead of searching for source_file in dataframe, find matching data by filename pattern
+            file_basename = os.path.basename(model_file)
+            matching_df = None
+            
+            for df in all_data_frames:
+                # First check if there's a source_file column we can use
+                if 'source_file' in df.columns:
+                    if file_basename in df['source_file'].iloc[0]:
+                        matching_df = df
+                        break
+                # If not, check if the explainer model matches
+                elif 'explainer_model' in df.columns:
+                    if df['explainer_model'].iloc[0] == model_name:
+                        matching_df = df
+                        break
+            
+            if matching_df is not None:
+                # Filter model data for hard elements
+                model_hard_df = matching_df[matching_df.apply(lambda row: (row['caption'], row['element']) in hard_elements, axis=1)]
+                
+                # Calculate pass rate metrics on hard subset
+                if not model_hard_df.empty:
+                    # Per row pass rate on hard subset
+                    hard_passes = sum(model_hard_df['autograder_judgment'] == 'PASS')
+                    hard_total = len(model_hard_df)
+                    hard_pass_rate = hard_passes / hard_total if hard_total > 0 else 0
+                    
+                    # Add hard subset metrics to summary
+                    summary_df.at[i, 'hard_pass_rate_per_row'] = hard_pass_rate
+                    # Remove per-caption-all metric since we're now using elements
+                    if 'hard_pass_rate_per_caption_all' in summary_df.columns:
+                        summary_df = summary_df.drop(columns=['hard_pass_rate_per_caption_all'])
+                        
     # --- Generate Display Name based on model type and filename ---
     def generate_display_name(row):
         """Generate display name, checking for Claude budget or OpenAI effort"""
@@ -332,6 +460,12 @@ def generate_benchmark_data(run_files, prices_path):
         'plot_color', 'explainer_family',
         'num_rows', 'num_captions'
     ]]
+    
+    # Add hard subset metrics if they exist
+    if 'hard_pass_rate_per_row' in summary_df.columns:
+        plot_data_df['hard_pass_rate_per_row'] = summary_df['hard_pass_rate_per_row']
+    if 'hard_pass_rate_per_caption_all' in summary_df.columns:
+        plot_data_df['hard_pass_rate_per_caption_all'] = summary_df['hard_pass_rate_per_caption_all']
 
     # --- Load GPQA scores first ---
     # Load GPQA scores from external file

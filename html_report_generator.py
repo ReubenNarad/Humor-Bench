@@ -161,6 +161,7 @@ HTML_TEMPLATE = """
                 <option value="pass_rate_per_row" selected>Pass Rate (Per Row)</option>
                 <option value="pass_rate_per_caption_all">Pass Rate (Per Caption - All)</option>
                 <option value="pass_rate_per_caption_some">Pass Rate (Per Caption - Some)</option>
+                <option value="hard_pass_rate_per_row">Hard Set Pass Rate (Per Row)</option>
             </select>
         </div>
         <div class="control-group">

@@ -23,8 +23,7 @@
 #     --n-workers 5
 
 python main_benchmark.py \
-    --explainer-model "o4-mini" \
+    --explainer-model "deepseek-ai/DeepSeek-R1" \
     --autograder-model "gpt-4o" \
-    --reasoning-effort "high" \
-    --run-name "o4-mini_high" \
-    --n-workers 50 \
+    --run-name "deepseek_r1" \
+    --n-workers 15 \
