@@ -1,4 +1,7 @@
 # Humor-Bench
+TODO: make this agree with the paper a little more, this was a preliminary README version
+
+
 
 Humor-Bench is a benchmark for evaluating humor understanding in AI Models. This research project includes an autograder system and comprehensive performance analysis across various models.
 
