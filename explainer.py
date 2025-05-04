@@ -89,8 +89,13 @@ class ExplainerClient:
         if model_lower.startswith("vllm:"):
             return MessageChain.VLLM
         
+        # Special case for Qwen models - assume they're VLLM models
+        if "qwen" in model_lower:
+            print(f"Qwen model detected: {model}. Inferring as VLLM model.")
+            return MessageChain.VLLM
+        
         # Check for specific prefixes first for Together API models
-        if any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'qwen/', 'deepseek-ai/', 'togethercomputer/']):
+        if any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'deepseek-ai/', 'togethercomputer/']):
              return MessageChain.TOGETHER
         # General keywords for Together (if prefix doesn't match)
         elif any(name in model_lower for name in ['llama', 'mistral', 'mixtral', 'falcon']):
@@ -208,16 +213,21 @@ class ExplainerClient:
     
     def parse_response(self, response_content):
         """
-        Parse the model response to extract explanation.
-        Handles potential thinking blocks (ignores them for the final explanation).
+        Parse the model response to extract explanation and thinking trace.
+        Handles potential thinking blocks and standard <think> tags.
 
         Args:
-            response_content: The raw content list from the Claude API response (list of objects like TextBlock, ThinkingBlock)
+            response_content: The raw content from the API response
 
         Returns:
-            Extracted explanation string
+            Dictionary with explanation and thinking trace (if present)
         """
-        explanation_text = "ERROR: No explanation found in response" # Default error message
+        # Initialize result dict
+        result = {
+            "explanation": "ERROR: No explanation found in response",
+            "has_thinking": False,
+            "thinking": ""
+        }
 
         # Check if the response is a list of content blocks (Claude)
         if isinstance(response_content, list):
@@ -226,26 +236,61 @@ class ExplainerClient:
                 # Access attributes directly, not via .get()
                 if hasattr(block, 'type') and block.type == "text" and hasattr(block, 'text'):
                     raw_text = block.text
-                    # We still might have XML tags inside the text block
-                    explanation_match = re.search(r'<explanation>(.*?)</explanation>', raw_text, re.DOTALL)
-                    if explanation_match:
-                        explanation_text = explanation_match.group(1).strip()
+                    
+                    # Check for thinking tags
+                    thinking_match = re.search(r'<think>(.*?)</think>', raw_text, re.DOTALL)
+                    if thinking_match:
+                        result["thinking"] = thinking_match.group(1).strip()
+                        result["has_thinking"] = True
+                        # Remove thinking section to get clean explanation
+                        clean_text = re.sub(r'<think>.*?</think>', '', raw_text, flags=re.DOTALL).strip()
+                        # Look for explanation tags in clean text
+                        explanation_match = re.search(r'<explanation>(.*?)</explanation>', clean_text, re.DOTALL)
+                        if explanation_match:
+                            result["explanation"] = explanation_match.group(1).strip()
+                        else:
+                            result["explanation"] = clean_text
                     else:
-                        # Fallback if tags are missing, use the whole text block
-                        explanation_text = raw_text.strip()
-                    # Found the first text block, break the loop
+                        # No thinking tags, check for explanation tags
+                        explanation_match = re.search(r'<explanation>(.*?)</explanation>', raw_text, re.DOTALL)
+                        if explanation_match:
+                            result["explanation"] = explanation_match.group(1).strip()
+                        else:
+                            result["explanation"] = raw_text.strip()
                     break
-            # If loop finishes without finding a text block, explanation_text remains the error message
-            return explanation_text
+                
         elif isinstance(response_content, str):
-            # Original logic for non-Claude responses (or simple string responses)
-            explanation_match = re.search(r'<explanation>(.*?)</explanation>', response_content, re.DOTALL)
-            explanation = explanation_match.group(1).strip() if explanation_match else response_content.strip()
-            return explanation
+            # Check for thinking tags
+            thinking_match = re.search(r'<think>(.*?)</think>', response_content, re.DOTALL)
+            
+            if thinking_match:
+                # Extract thinking part
+                result["thinking"] = thinking_match.group(1).strip()
+                result["has_thinking"] = True
+                
+                # Remove thinking section to get clean explanation
+                clean_content = re.sub(r'<think>.*?</think>', '', response_content, flags=re.DOTALL).strip()
+                
+                # Look for explanation tags in the clean content
+                explanation_match = re.search(r'<explanation>(.*?)</explanation>', clean_content, re.DOTALL)
+                if explanation_match:
+                    result["explanation"] = explanation_match.group(1).strip()
+                else:
+                    # If no explicit explanation tags, use the whole remaining content
+                    result["explanation"] = clean_content
+            else:
+                # No thinking tags, proceed with normal explanation extraction
+                explanation_match = re.search(r'<explanation>(.*?)</explanation>', response_content, re.DOTALL)
+                if explanation_match:
+                    result["explanation"] = explanation_match.group(1).strip()
+                else:
+                    result["explanation"] = response_content.strip()
         else:
-            # Handle unexpected response format
-            print(f"Warning: Unexpected response content format type: {type(response_content)}. Returning as is.")
-            return str(response_content)
+            # Handle unexpected format
+            print(f"Warning: Unexpected response content format: {type(response_content)}")
+            result["explanation"] = str(response_content)
+        
+        return result
     
     async def explain_cartoon(self, description, caption):
         """
@@ -256,7 +301,7 @@ class ExplainerClient:
             caption: The caption for the cartoon
             
         Returns:
-            Dictionary with explanation and usage info
+            Dictionary with explanation, thinking (if present), and usage info
         """
         # Format the prompt
         prompt = self.format_prompt(description, caption)
@@ -272,13 +317,20 @@ class ExplainerClient:
         response = await self._make_api_call(formatted_messages)
         
         # Parse the response content correctly
-        explanation = self.parse_response(response["content"])
+        parsed_result = self.parse_response(response["content"])
         
         # Return results
-        return {
-            "explanation": explanation,
+        result = {
+            "explanation": parsed_result["explanation"],
             "usage": response.get("usage", {})
         }
+        
+        # Add thinking trace if present
+        if parsed_result["has_thinking"]:
+            result["has_thinking"] = True
+            result["thinking"] = parsed_result["thinking"]
+        
+        return result
     
     async def _make_api_call(self, formatted_messages):
         """

@@ -33,16 +33,20 @@ async def process_row(explainer, autograder, row_tuple):
         
         # 1. Get explanation using explainer client
         explanation_result = await explainer.explain_cartoon(description, caption)
-        explanation = explanation_result['explanation']
+        explanation = explanation_result['explanation']  # This is now the clean explanation without thinking
         explainer_usage = explanation_result['usage']
         
-        # 2. Grade explanation using autograder client
+        # Track thinking trace if present
+        has_thinking = explanation_result.get('has_thinking', False)
+        thinking_trace = explanation_result.get('thinking', "")
+        
+        # 2. Grade explanation using autograder client (using clean explanation)
         grade_result = await autograder.grade_explanation(
             description, caption, element, explanation
         )
         
         # Return combined results along with the original index
-        return index, {
+        result = {
             'explanation': explanation,
             'autograder_judgment': grade_result['judgment'],
             'autograder_reasoning': grade_result['reasoning'],
@@ -51,6 +55,13 @@ async def process_row(explainer, autograder, row_tuple):
             'autograder_model': autograder.model, # Add autograder model info
             'autograder_usage': grade_result['usage']
         }
+        
+        # Add thinking trace if it exists
+        if has_thinking:
+            result['has_thinking'] = True
+            result['thinking_trace'] = thinking_trace
+        
+        return index, result
     except Exception as e:
         # Log error and return partial data with the index
         print(f"Error processing row index {index}: {str(e)}")
@@ -310,6 +321,15 @@ async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=D
     df_limited['explainer_usage'] = df_limited.index.map(lambda i: json.dumps(results_dict.get(i, {}).get('explainer_usage', {})))
     df_limited['autograder_model'] = df_limited.index.map(lambda i: results_dict.get(i, {}).get('autograder_model', 'ERROR'))
     df_limited['autograder_usage'] = df_limited.index.map(lambda i: json.dumps(results_dict.get(i, {}).get('autograder_usage', {})))
+    
+    # Add thinking trace columns if present in any results
+    has_thinking_in_results = any('has_thinking' in data for _, data in results_list)
+    if has_thinking_in_results:
+        print(f"Thinking traces detected! Adding thinking-related columns to output.")
+        df_limited['has_thinking'] = df_limited.index.map(
+            lambda i: results_dict.get(i, {}).get('has_thinking', False))
+        df_limited['thinking_trace'] = df_limited.index.map(
+            lambda i: results_dict.get(i, {}).get('thinking_trace', ''))
 
     # --- Save results ---
     os.makedirs(OUTPUT_DIR, exist_ok=True)
