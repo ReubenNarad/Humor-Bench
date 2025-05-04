@@ -1,0 +1,19 @@
+# Core dependencies
+pandas
+numpy
+tqdm
+python-dotenv
+
+# LLM API clients
+openai
+anthropic
+google-generativeai
+
+# OPTIONAL: VLLM for local inference
+# vllm
+
+# Data visualization (for analysis)
+matplotlib
+
+# Web report generation
+jinja2
