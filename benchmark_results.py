@@ -29,7 +29,7 @@ RUN_FILES_TO_ANALYZE = [
     "runs/main/20250416_184110_o1_explainer_vs_gpt4o_grader_exp-o1_ag-gpt_4o.csv",
     "runs/main/20250428_145241_deepseek_v3_exp-deepseek_ai_DeepSeek_V3_ag-gpt_4o.csv",
     "runs/main/20250428_151728_deepseek_r1_exp-deepseek_ai_DeepSeek_R1_ag-gpt_4o.csv",
-
+    "runs/main/20250502_222737_grok_3_beta_exp-grok_3_beta_ag-gpt_4o.csv",
 
     # Claude thinking budget experiment
     "runs/claude_thinking_experiment/20250416_193729_claude_thinking_budget_1024_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
@@ -50,7 +50,7 @@ MODEL_NICKNAMES = {
     "gpt-4o": "gpt-4o",
     "o4-mini": "o4-mini", # Base nickname for o4-mini
     "o3-mini": "o3-mini",
-    "claude-3-7-sonnet-latest": "Claude 3.7",  # Default Claude without thinking
+    "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet",  # Updated default Claude nickname
     "gemini-2-5-pro-preview-03-25": "Gemini 2.5 pro",
     "gemini-1-5-pro": "Gemini 1.5 pro",
     "meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8": "Llama 4 Maverick",
@@ -60,6 +60,7 @@ MODEL_NICKNAMES = {
     "o3": "o3", # Base nickname for o3
     "deepseek-ai-DeepSeek-V3": "DeepSeek V3", # Add nickname for DeepSeek V3
     "deepseek-ai-DeepSeek-R1": "DeepSeek R1", # Add nickname for DeepSeek R1
+    "grok-3-beta": "Grok 3", # Add nickname for grok-3-beta
     # Add specialized nicknames for Claude with thinkin  budgets
     # These will be generated dynamically below
 }
@@ -92,6 +93,8 @@ def infer_family_from_model(model):
         return 'anthropic' # Use 'anthropic' to match user request color key
     elif 'gemini' in model_lower:
         return 'gemini'
+    elif 'grok' in model_lower: # Added check for grok models
+        return 'xai'
     elif 'deepseek' in model_lower: # Check specific deepseek if not covered by together prefixes
          return 'deepseek' # Or map to 'together' if always used via their API
     else:
@@ -106,6 +109,7 @@ FAMILY_COLORS = {
     'gemini': '#8055e6', # Using mediumpurple as lightpurple can be very pale
     'together': 'lightblue',  # Using lightblue as blue can be dark
     'deepseek': 'lightblue',    # Adding a color for deepseek if inferred separately
+    'xai': '#333333', # Changed to very dark grey/almost black for white tooltip text
     'unknown': 'grey'       # Fallback color
 }
 
@@ -388,41 +392,43 @@ def generate_benchmark_data(run_files, prices_path):
                         summary_df = summary_df.drop(columns=['hard_pass_rate_per_caption_all'])
                         
     # --- Generate Display Name based on model type and filename ---
-    def generate_display_name(row):
-        """Generate display name, checking for Claude budget or OpenAI effort"""
-        model_name = row['explainer_model'] # Normalized name like 'o4-mini' or 'claude-3-7-sonnet-latest'
+    def generate_display_names(row):
+        """Generate plain text display name and HTML plot label."""
+        model_name = row['explainer_model']
         filename = row['source_file']
-        base_nickname = MODEL_NICKNAMES.get(model_name, model_name) # Get default nickname first
+        base_nickname = MODEL_NICKNAMES.get(model_name, model_name)
 
-        # 1. Check for OpenAI 'o' models with effort in filename (using run_name convention)
-        # Assumes run_name format like 'o4-mini_low', 'o4-mini_medium', etc.
-        if model_name in ['o1', 'o4-mini', 'o3', 'o3-mini']: # Add other 'o' models if needed
+        plain_name = base_nickname
+        html_label = base_nickname # Default to plain name
+
+        # 1. Check for OpenAI 'o' models with effort
+        if model_name in ['o1', 'o4-mini', 'o3', 'o3-mini']:
             effort_match_low = re.search(rf"{model_name}_low", filename)
             effort_match_medium = re.search(rf"{model_name}_medium", filename)
             effort_match_high = re.search(rf"{model_name}_high", filename)
 
             if effort_match_low:
-                return f"{base_nickname} low"
+                plain_name = f"{base_nickname} low"
             elif effort_match_medium:
-                # Optionally, don't append 'medium' as it's the default
-                return f"{base_nickname} medium"
-                # return base_nickname # Keep it clean if medium is default behavior - Previous logic
+                plain_name = f"{base_nickname} medium"
             elif effort_match_high:
-                return f"{base_nickname} high"
+                plain_name = f"{base_nickname} high"
+            html_label = plain_name # HTML label is the same here
 
-        # 2. Check for Claude models with thinking budget in filename
-        if "claude" in model_name.lower() and "thinking_budget" in filename:
+        # 2. Check for Claude models with thinking budget
+        elif "claude" in model_name.lower() and "thinking_budget" in filename:
             budget_match = re.search(r'thinking_budget_(\d+k?)', filename)
             if budget_match:
                 budget_str = budget_match.group(1)
-                # Use base_nickname here too, e.g., "Claude 3.7 (think: 4096)"
-                return f"{base_nickname} (think: {budget_str})"
+                # Simplified plain name for UI/dropdown
+                plain_name = f"{base_nickname} {budget_str}"
+                # HTML label for plot hover/text with newline and grey styling
+                html_label = f"{base_nickname}<br><span style='color:grey;'>Thinking budget: {budget_str}</span>"
 
-        # 3. Default case: Use the standard nickname mapping
-        return base_nickname
+        return pd.Series([plain_name, html_label], index=['display_name', 'plot_label'])
 
     # Apply the new display name generation function
-    summary_df['display_name'] = summary_df.apply(generate_display_name, axis=1)
+    summary_df[['display_name', 'plot_label']] = summary_df.apply(generate_display_names, axis=1)
 
     # --- Infer Family and Assign Colors ---
     summary_df['explainer_family'] = summary_df['explainer_model'].apply(infer_family_from_model)
@@ -460,6 +466,12 @@ def generate_benchmark_data(run_files, prices_path):
         'plot_color', 'explainer_family',
         'num_rows', 'num_captions'
     ]]
+    
+    # Add plot_label column if it exists in summary_df
+    if 'plot_label' in summary_df.columns:
+        plot_data_df['plot_label'] = summary_df['plot_label']
+    else: # Ensure the column exists even if empty (e.g., if no special names were generated)
+        plot_data_df['plot_label'] = plot_data_df['display_name'] # Default to display_name
     
     # Add hard subset metrics if they exist
     if 'hard_pass_rate_per_row' in summary_df.columns:

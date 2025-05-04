@@ -27,6 +27,10 @@ async def process_row(explainer, autograder, row_tuple):
         caption = row['caption']
         element = row['element']  # This is the anticipated point
         
+        # Add a small delay for XAI models to avoid rate limiting
+        if explainer.family == 'xai':
+            await asyncio.sleep(1.0)  # 1 second delay for XAI API
+        
         # 1. Get explanation using explainer client
         explanation_result = await explainer.explain_cartoon(description, caption)
         explanation = explanation_result['explanation']
@@ -221,9 +225,17 @@ async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=D
 
     # Initialize clients
     try:
+        # Explicitly pass API key if XAI family
+        xai_api_key = None
+        if explainer_model and 'grok' in explainer_model.lower():
+             xai_api_key = os.environ.get("XAI_API_KEY")
+             if not xai_api_key:
+                  print("Warning: XAI_API_KEY environment variable not found for grok model.")
+
         # Pass thinking_budget and reasoning_effort to ExplainerClient
         explainer = ExplainerClient(
             model=explainer_model, 
+            api_key=xai_api_key, # Pass the key explicitly
             thinking_budget=thinking_budget,
             reasoning_effort=reasoning_effort # Pass effort here
         )

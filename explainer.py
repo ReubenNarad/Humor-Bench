@@ -43,7 +43,7 @@ class ExplainerClient:
         self.api_key = api_key
         
         # Validate family
-        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER]:
+        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.XAI]:
             raise ValueError(f"Unsupported model family: {family}")
         
         # Initialize the appropriate client based on the family
@@ -89,6 +89,8 @@ class ExplainerClient:
             return MessageChain.CLAUDE
         elif 'gemini' in model_lower:
             return MessageChain.GEMINI
+        elif 'grok' in model_lower:
+            return MessageChain.XAI
         # Keep DeepSeek specific check last in case there are other deepseek models not via Together
         # OR remove it if ALL deepseek models you use are via Together
         # elif 'deepseek' in model_lower:
@@ -154,6 +156,17 @@ class ExplainerClient:
                     raise ValueError("Together API key not found in environment variables")
             
             return AsyncOpenAI(api_key=api_key, base_url="https://api.together.xyz/v1")
+        
+        elif self.family == MessageChain.XAI:
+            from openai import AsyncOpenAI
+            
+            if not api_key:
+                # Get from environment
+                api_key = os.environ.get("XAI_API_KEY")
+                if not api_key:
+                    raise ValueError("XAI API key not found in environment variables")
+            
+            return AsyncOpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
         
         raise ValueError(f"Unsupported model family for async client: {self.family}")
     
@@ -415,6 +428,23 @@ class ExplainerClient:
             return {
                 "content": response.content,
                 "usage": usage_data
+            }
+        
+        elif self.family == MessageChain.XAI:
+            api_params = {
+                "model": self.model,
+                **formatted_messages # Assumes OpenAI-compatible format
+            }
+            response = await self.client.chat.completions.create(**api_params)
+            usage = response.usage
+            prompt_tokens = getattr(usage, 'prompt_tokens', 0) if usage else 0
+            completion_tokens = getattr(usage, 'completion_tokens', 0) if usage else 0
+            return {
+                "content": response.choices[0].message.content,
+                "usage": {
+                    "tokens_in": prompt_tokens,
+                    "tokens_out": completion_tokens,
+                }
             }
         
         raise ValueError(f"Unsupported model family for async API call: {self.family}")

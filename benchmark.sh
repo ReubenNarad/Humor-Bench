@@ -22,8 +22,10 @@
 #     --run-name "claude_thinking_budget_4096"\
 #     --n-workers 5
 
-python main_benchmark.py \
-    --explainer-model "deepseek-ai/DeepSeek-R1" \
-    --autograder-model "gpt-4o" \
-    --run-name "deepseek_r1" \
-    --n-workers 15 \
+# python main_benchmark.py \
+#     --explainer-model "grok-3-beta" \
+#     --autograder-model "gpt-4o" \
+#     --run-name "grok_3_beta" \
+#     --n-workers 5 \
+
+

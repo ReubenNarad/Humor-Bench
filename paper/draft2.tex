@@ -1,0 +1,250 @@
+\documentclass[twocolumn]{article}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\title{HumorBench: A Benchmark for Evaluating Humor Comprehension in Large Language Models}
+\author{Reuben Binns et al.}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Humor comprehension represents a particularly challenging task for Large Language Models (LLMs), requiring sophisticated understanding of context, culture, and implicit connections. We introduce HumorBench, a benchmark specifically designed to evaluate an LLM's ability to identify and explain the core comedic elements in humorous content using New Yorker Cartoon Caption Contest examples. Unlike existing humor benchmarks that conflate subjective appreciation with objective comprehension, HumorBench isolates the latter, focusing exclusively on whether models can identify the specific elements that make a cartoon-caption pair humorous. Our evaluation framework uses an LLM-based autograder validated against human judgments, achieving 87\% accuracy. Results from testing leading models reveal significant gaps in humor comprehension abilities, with even frontier models struggling on more complex examples. HumorBench serves as a novel evaluation tool that highlights specific limitations in LLMs' ability to make conceptual connections and recognize implicit meaning—skills essential not just for humor but for advanced natural language understanding.
+\end{abstract}
+
+\section{Introduction}
+
+Humor comprehension represents a particularly challenging task for Large Language Models (LLMs), requiring sophisticated understanding of context, culture, and implicit connections. While recent advances have shown impressive capabilities across various reasoning tasks, humor remains a frontier challenge that tests a model's ability to understand nuanced social contexts, cultural references, and the subtle mechanisms that create comedic effects.
+
+Our work focuses exclusively on objective humor comprehension (understanding why something is intended to be humorous) rather than subjective appreciation (finding something funny). This distinction is crucial, as existing benchmarks often conflate these separate challenges.
+
+HumorBench uses cartoons and captions from the New Yorker Caption Contest and CartoonStock.com, sources known for sophisticated humor requiring cultural knowledge, understanding of tropes, and nuanced storytelling. For each cartoon-caption pair, we provide the model with:
+
+\begin{itemize}
+    \item A detailed text description of the cartoon's visual elements
+    \item The corresponding caption
+    \item A request to explain the humor in the pairing
+\end{itemize}
+
+The key innovation of HumorBench is our evaluation methodology. Rather than measuring a model's ability to generate humorous content or judge what humans might find funny, we assess whether the model can identify the specific, objective elements that create the humor. For each cartoon-caption pair, we have expert-annotated "humor elements" that capture the key aspects of the joke. An LLM-based autograder (validated against human judgments with 87\% accuracy) then evaluates model-generated explanations based on whether they successfully identify these core elements.
+
+Our benchmark reveals that while frontier models perform reasonably well on standard examples, they still struggle significantly with more complex humor. We also release HumorBench-Hard (HBH), a subset featuring particularly challenging examples, where no current LLM exceeds 20\% accuracy.
+
+HumorBench serves as a novel evaluation framework that reveals specific gaps in LLM comprehension abilities, particularly in making the conceptual leaps required to connect disparate elements and recognize implicit meaning—skills essential not just for humor but for advanced natural language understanding.
+
+\section{Related Work}
+%% PLACEHOLDER: Expand with more detailed literature review %%
+Previous work on humor in NLP has focused on three main directions: humor recognition (detecting whether content is intended to be humorous), humor generation (creating new humorous content), and humor ranking (predicting which content humans will find funnier). Notable examples include:
+
+\begin{itemize}
+    \item \textbf{Hessel et al. (2022)} developed an LLM-based system to evaluate New Yorker cartoon caption contest submissions, focusing on predicting which captions humans would rate as funnier.
+    \item \textbf{Yang et al. (2023)} worked on humor explanation tasks but focused on explaining why humans might find content funny rather than identifying objective humor elements.
+    \item \textbf{Hasan et al. (2021)} explored computational humor through generation tasks, emphasizing the subjective aspects of humor production.
+\end{itemize}
+
+Our work differs from these approaches by:
+\begin{itemize}
+    \item Focusing exclusively on objective comprehension rather than subjective appreciation
+    \item Providing detailed expert annotations of humor elements for evaluation
+    \item Using a validation-tested LLM autograder system to assess explanations
+    \item Testing frontier models on particularly challenging examples of sophisticated humor
+\end{itemize}
+
+%% PLACEHOLDER: Add more specific references and comparisons to previous humor benchmarks %%
+
+\section{HumorBench}
+
+\subsection{Why Another Humor Benchmark?}
+
+The New Yorker cartoon style represents a particularly sophisticated form of humor that relies on:
+\begin{itemize}
+    \item Cultural knowledge and references
+    \item Understanding of social norms and their subversion
+    \item Wordplay and dual meanings
+    \item Juxtaposition of the mundane with the absurd
+    \item Implicit connections that readers must infer
+\end{itemize}
+
+Previous work on New Yorker cartoons has primarily focused on:
+\begin{itemize}
+    \item Ranking captions by predicted funniness
+    \item Explanation tasks that ask models to predict why humans might find content amusing
+    \item Generation of new captions for existing cartoons
+\end{itemize}
+
+These approaches all conflate objective and subjective factors in humor assessment. By contrast, HumorBench isolates the objective comprehension element, creating a more focused evaluation of an LLM's understanding capabilities.
+
+\subsection{Our Task}
+
+The core task in HumorBench requires a model to:
+\begin{enumerate}
+    \item Receive a text description of a New Yorker cartoon image
+    \item Receive the corresponding winning caption
+    \item Generate a concise explanation (under 200 words) identifying the "material substance" or key comedic element of the joke
+\end{enumerate}
+
+Unlike previous explanation tasks, we don't judge the model's ability to predict what humans would find funny. Instead, we evaluate whether the explanation covers the specific, objective elements that create the humor, as identified in our expert annotations.
+
+The explainer prompt instructs the model:
+\begin{quote}
+"You are a humor expert extraordinaire, judging the New Yorker Cartoon Caption Contest. Your current task is to help us understand the humor in various submitted captions. Given a cartoon description and a caption submission, explain (in less than 200 words) *what* the joke is, focusing on the material substance of the joke."
+\end{quote}
+
+\subsection{Autograder Construction}
+
+To evaluate model explanations, we constructed an LLM-based autograder using GPT-4o. The autograder:
+\begin{itemize}
+    \item Receives the cartoon description, caption, model-generated explanation, and the "anticipated point" (ground truth humor element)
+    \item Determines whether the explanation explicitly covers the anticipated point
+    \item Outputs a PASS/FAIL judgment with reasoning
+\end{itemize}
+
+We validated the autograder against 400 human judgments (PASS/FAIL labels for explanations from four different models across 100 humor elements), achieving 87\% accuracy. Importantly, the validation found that the autograder has a higher False Positive Rate than False Negative Rate, meaning it's more lenient than human judges. This suggests our reported performance metrics represent an upper bound on model capabilities.
+
+The autograder prompt instructs the model to evaluate whether the explanation captures the key humor element:
+\begin{quote}
+"You will receive: 1. A short cartoon description, 2. A winning funny caption, 3. A student's answer, 4. A brief 'anticipated answer point' that captures the crucial comedic device or element. Your job is to determine whether the student's answer explicitly covers that 'anticipated answer point.'"
+\end{quote}
+
+%% PLACEHOLDER: Add discussion of autograder validation methods and results in more detail %%
+
+\section{Dataset Curation}
+
+\subsection{Cartoon Caption Selection}
+
+The dataset contains:
+\begin{itemize}
+    \item Unique identifiers for each data point
+    \item Cartoon descriptions detailing visual elements
+    \item Winning captions associated with each cartoon
+    \item Expert-annotated humor elements identifying the specific comedic devices at work
+\end{itemize}
+
+We sourced the original cartoons and captions from:
+\begin{itemize}
+    \item Nextml Caption Contest Data
+    \item jmhessel/newyorker\_caption\_contest Hugging Face dataset
+    \item CartoonStock
+\end{itemize}
+
+%% PLACEHOLDER: Add information about selection criteria and filtering process %%
+
+\subsection{Comprehension Element Annotation}
+
+The "element" annotations identify the specific humor mechanism at work in each cartoon-caption pair. These annotations were created by humor experts and serve as the ground truth for evaluation.
+
+Each element identifies the specific comedic device or concept that an explanation should capture, such as:
+\begin{itemize}
+    \item Wordplay or puns
+    \item Juxtaposition of unexpected elements
+    \item Cultural references
+    \item Subversion of expectations
+    \item Absurdity or exaggeration
+\end{itemize}
+
+%% PLACEHOLDER: Add more details about annotation process and inter-annotator agreement %%
+
+\section{Experiments}
+
+\subsection{Experimental Setup}
+
+We evaluated multiple leading LLMs on HumorBench, including:
+\begin{itemize}
+    \item GPT-4o
+    \item Claude 3.7 Sonnet
+    \item Gemini 2.5 Pro
+    \item Llama 4 Maverick
+    \item Other models (details to be added)
+\end{itemize}
+
+For each model, we:
+\begin{itemize}
+    \item Generated explanations using the explainer prompt
+    \item Evaluated explanations using the autograder
+    \item Calculated PASS rates (percentage of explanations deemed to correctly identify the humor element)
+    \item Tracked token usage and calculated cost metrics
+\end{itemize}
+
+Implementation details:
+\begin{itemize}
+    \item We used asynchronous processing to handle multiple examples efficiently
+    \item Explainer and autograder clients supported various model APIs (OpenAI, Claude, Gemini, Together, XAI)
+    \item Response parsing extracted explanations from within specified XML tags
+\end{itemize}
+
+%% PLACEHOLDER: Add full details of model versions, prompting strategies, and processing pipeline %%
+
+\subsection{Main Results}
+
+%% PLACEHOLDER: Add performance results from benchmark runs %%
+
+Key findings include:
+\begin{itemize}
+    \item Frontier models (e.g., GPT-4o, Claude 3.7) achieved the highest PASS rates on the standard benchmark
+    \item All models showed significant performance drops on HumorBench-Hard examples
+    \item Model performance correlated with cost, with more expensive models generally performing better
+    \item Certain humor elements (particularly those requiring cultural knowledge or multi-step reasoning) proved challenging across all models
+\end{itemize}
+
+\subsection{Comparison and Correlations to Other Benchmarks}
+
+%% PLACEHOLDER: Add comparison with MMLU, LLM-arena, and other benchmark results %%
+
+\subsection{Analysis of HumorBench-Hard}
+
+HumorBench-Hard (HBH) consists of particularly challenging examples where even frontier models struggle. Common failure patterns include:
+
+\begin{itemize}
+    \item Missing cultural references that are essential to understanding the joke
+    \item Failing to recognize wordplay or puns
+    \item Missing connections between visual elements and caption content
+    \item Inability to recognize subverted tropes or expectations
+    \item Struggling with humor that requires multi-step reasoning
+\end{itemize}
+
+%% PLACEHOLDER: Add detailed analysis of failure cases and categorization of challenging examples %%
+
+\subsection{Human-AI Collaborative Explanation}
+
+%% PLACEHOLDER: Add results from experiments with human hints or guidance %%
+
+\section{Conclusion and Future Work}
+
+HumorBench provides a novel framework for evaluating an essential aspect of language understanding—the ability to comprehend humor. Our results highlight significant gaps in current LLMs' ability to identify and explain even relatively straightforward humor elements, with performance dropping dramatically on more complex examples.
+
+The benchmark serves as a valuable tool for measuring progress in natural language understanding, particularly in areas requiring:
+\begin{itemize}
+    \item Integration of cultural and contextual knowledge
+    \item Recognition of implicit connections
+    \item Understanding of social norms and their subversion
+    \item Multi-step reasoning about intentions and meanings
+\end{itemize}
+
+Future work could extend HumorBench by:
+\begin{itemize}
+    \item Including more diverse humor sources beyond New Yorker cartoons
+    \item Developing metrics for specific dimensions of humor understanding
+    \item Comparing autograder performance across different LLMs
+    \item Exploring few-shot prompting or fine-tuning to improve explainer performance
+    \item Investigating the use of reinforcement learning to enhance model ability to draw connections between concepts
+\end{itemize}
+
+\section*{Limitations}
+
+The current version of HumorBench has several limitations:
+
+\begin{itemize}
+    \item Focuses primarily on New Yorker-style humor, which may not generalize to other cultural contexts
+    \item Relies on text descriptions rather than actual cartoon images
+    \item Uses an LLM-based autograder, which has inherent limitations despite validation
+    \item Exhibits a higher False Positive Rate than False Negative Rate in autograder judgments
+    \item May not fully separate objective understanding from subjective factors in all cases
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document} 

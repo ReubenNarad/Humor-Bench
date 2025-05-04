@@ -34,11 +34,11 @@ HTML_TEMPLATE = """
         }}
         h1 {{ 
             margin: 0; 
-            font-size: 24px; 
+            font-size: 28px; 
             color: #333;
         }}
         .metadata {{ 
-            font-size: 12px; 
+            font-size: 14px; 
             color: #666; 
             margin-top: 5px; 
         }}
@@ -54,7 +54,7 @@ HTML_TEMPLATE = """
         label {{ 
             margin-right: 8px; 
             font-weight: 600; 
-            font-size: 14px; 
+            font-size: 16px; 
         }}
         select {{ 
             padding: 6px 10px; 
@@ -62,6 +62,7 @@ HTML_TEMPLATE = """
             border-radius: 4px; 
             background-color: white; 
             min-width: 180px; 
+            font-size: 14px;
         }}
         .checkbox-wrapper {{ 
             display: flex; 
@@ -70,6 +71,10 @@ HTML_TEMPLATE = """
         }}
         .checkbox-wrapper input {{ 
             margin-right: 5px; 
+            transform: scale(1.2);
+        }}
+        .checkbox-wrapper label {{
+            font-size: 14px;
         }}
         .content {{ 
             padding: 20px; 
@@ -96,6 +101,7 @@ HTML_TEMPLATE = """
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 14px;
         }}
         .dropdown-btn:after {{
             content: "▼";
@@ -121,6 +127,7 @@ HTML_TEMPLATE = """
             display: flex;
             padding: 5px 10px;
             align-items: center;
+            font-size: 14px;
         }}
         .dropdown-item:hover {{
             background-color: #f1f1f1;
@@ -133,7 +140,7 @@ HTML_TEMPLATE = """
             margin-top: 5px;
         }}
         .dropdown-action {{
-            font-size: 12px;
+            font-size: 14px;
             color: #0066cc;
             cursor: pointer;
             background: none;
@@ -233,9 +240,9 @@ HTML_TEMPLATE = """
                 return;
             }}
             
-            // Extract unique model names and sort them
+            // Extract unique PLAIN TEXT model names and sort them
             allModelNames = [...new Set(reportData.map(d => d.display_name))].sort();
-            selectedModels = [...allModelNames]; // Start with all models selected
+            selectedModels = [...allModelNames]; // Start with all models selected (use plain names for selection state)
             
             // Check if GPQA data exists
             const hasGpqaData = reportData.some(d => d.gpqa_score !== undefined && d.gpqa_score !== null);
@@ -275,8 +282,8 @@ HTML_TEMPLATE = """
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.value = name;
-                checkbox.id = `model-${{name.replace(/\\s+/g, '-')}}`;
+                checkbox.value = name; // Use plain name as value
+                checkbox.id = `model-${{name.replace(/[^\w-]+/g, '-')}}`; // Sanitize ID
                 checkbox.checked = true; // Default to checked
                 
                 checkbox.addEventListener('change', function() {{
@@ -291,7 +298,7 @@ HTML_TEMPLATE = """
                 
                 const label = document.createElement('label');
                 label.htmlFor = checkbox.id;
-                label.textContent = name;
+                label.textContent = name; // Use plain name for the label text
                 label.style.fontWeight = 'normal';
                 label.style.marginLeft = '5px';
                 
@@ -330,7 +337,13 @@ HTML_TEMPLATE = """
                 type: useLogScale ? 'log' : 'linear',
                 autorange: true,
                 tickprefix: '',
-                ticksuffix: ''
+                ticksuffix: '',
+                titlefont: {{
+                    size: 18  // Increased font size for axis titles
+                }},
+                tickfont: {{
+                    size: 14  // Increased font size for tick labels
+                }}
             }};
             
             // Settings based on axis type
@@ -375,41 +388,59 @@ HTML_TEMPLATE = """
             const trace = {{
                 x: filteredData.map(d => formatAxisValue(d[selectedXAxis], selectedXAxis)),
                 y: filteredData.map(d => d[selectedYAxis] * 100), // Convert to percentage
-                text: filteredData.map(d => d.display_name), // Text for hover/annotations
+                text: filteredData.map(d => d.plot_label), // Use plot_label (HTML version) for hover/annotations
                 mode: 'markers+text',
                 type: 'scatter',
                 marker: {{
-                    size: 12,
+                    size: 16,  // Increased marker size
                     color: filteredData.map(d => d.plot_color),
                     line: {{
                         color: 'black',
-                        width: 1
+                        width: 1.5  // Slightly thicker border
                     }}
                 }},
-                textposition: 'top center',
+                textposition: 'top right',
                 textfont: {{
-                    size: 11
+                    size: 14  // Increased text label size
                 }},
                 hoverinfo: 'text+x+y',
-                hovertemplate: '<b>%{{text}}</b><br>' +
-                               `${{xAxisSelect.options[xAxisSelect.selectedIndex].text}}: %{{x:.2f}}<br>` + 
-                               `${{yAxisSelect.options[yAxisSelect.selectedIndex].text}}: %{{y:.2f}}%` +
+                hovertemplate: '%{{text}}' + // Use the plot_label directly here (already includes HTML)
+                               `<br>${{xAxisSelect.options[xAxisSelect.selectedIndex].text}}: %{{x:.2f}}` + 
+                               `<br>${{yAxisSelect.options[yAxisSelect.selectedIndex].text}}: %{{y:.2f}}%` +
                                '<extra></extra>' // Hide extra hover info
             }};
 
             const layout = {{
-                title: `Benchmark: ${{yAxisSelect.options[yAxisSelect.selectedIndex].text}} vs ${{xAxisSelect.options[xAxisSelect.selectedIndex].text}}`,
+                title: {{
+                    text: `Benchmark: ${{yAxisSelect.options[yAxisSelect.selectedIndex].text}} vs ${{xAxisSelect.options[xAxisSelect.selectedIndex].text}}`,
+                    font: {{
+                        size: 24  // Increased title font size
+                    }}
+                }},
                 xaxis: {{
-                    title: `${{xAxisSelect.options[xAxisSelect.selectedIndex].text}}${{useLogScaleX ? ' (Log Scale)' : ''}}`,
+                    title: {{
+                        text: `${{xAxisSelect.options[xAxisSelect.selectedIndex].text}}${{useLogScaleX ? ' (Log Scale)' : ''}}`,
+                        font: {{
+                            size: 18  // Increased X-axis title font size
+                        }}
+                    }},
                     ...getAxisSettings(selectedXAxis, useLogScaleX)
                 }},
                 yaxis: {{
-                    title: yAxisSelect.options[yAxisSelect.selectedIndex].text + ' (%)',
+                    title: {{
+                        text: yAxisSelect.options[yAxisSelect.selectedIndex].text + ' (%)',
+                        font: {{
+                            size: 18  // Increased Y-axis title font size
+                        }}
+                    }},
                     ticksuffix: '%',
-                    autorange: true
+                    autorange: true,
+                    tickfont: {{
+                        size: 14  // Increased tick font size
+                    }}
                 }},
                 hovermode: 'closest',
-                margin: {{ l: 60, r: 30, t: 40, b: 70 }},
+                margin: {{ l: 80, r: 40, t: 60, b: 80 }},  // Increased margins for larger labels
                 autosize: true,
             }};
 
@@ -419,7 +450,7 @@ HTML_TEMPLATE = """
                 const minY = Math.min(...yValues);
                 const maxY = Math.max(...yValues);
                 const yPadding = Math.max(2, (maxY - minY) * 0.05);
-                layout.yaxis.range = [minY - yPadding, maxY + yPadding * 1.5];
+                layout.yaxis.range = [minY - yPadding, maxY + yPadding * 2];  // Increased top padding for labels
             }}
 
             // Adjust X-axis range slightly, especially for log scale
@@ -428,11 +459,11 @@ HTML_TEMPLATE = """
                  const minX = Math.min(...xValues);
                  const maxX = Math.max(...xValues);
                  if (useLogScaleX) {{
-                    const factor = 1.1;
+                    const factor = 1.2;  // Increased padding factor for log scale
                     const effectiveMinX = Math.max(minX, 1e-9);
                     layout.xaxis.range = [Math.log10(effectiveMinX / factor), Math.log10(maxX * factor)];
                  }} else {{
-                     const xPadding = Math.max(0.01, (maxX - minX) * 0.05);
+                     const xPadding = Math.max(0.01, (maxX - minX) * 0.08);  // Increased padding
                      layout.xaxis.range = [minX - xPadding, maxX + xPadding];
                  }}
              }}
