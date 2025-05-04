@@ -114,11 +114,9 @@ class ExplainerClient:
         # elif 'deepseek' in model_lower:
         #     return MessageChain.DEEPSEEK # Keep or remove based on your usage
         else:
-            # Fallback or raise error
-            print(f"Warning: Could not definitively infer family for {model}. Defaulting to TOGETHER.")
-            # Or be stricter:
-            # raise ValueError(f"Could not infer model family from model name: {model}. Please specify the family explicitly.")
-            return MessageChain.TOGETHER # Defaulting to Together as a common provider
+            # Fallback to VLLM instead of TOGETHER
+            print(f"Warning: Could not definitively infer family for {model}. Defaulting to VLLM.")
+            return MessageChain.VLLM
     
     def _initialize_client(self):
         """
