@@ -28,4 +28,21 @@
 #     --run-name "grok_3_beta" \
 #     --n-workers 5 \
 
+# Run the benchmark with TinyLlama using VLLM endpoint
+# python main_benchmark.py \
+#     --explainer-model "vllm:TinyLlama/TinyLlama-1.1B-Chat-v1.0" \
+#     --autograder-model "gpt-4o" \
+#     --run-name "vllm_tinyllama_vs_gpt4o_grader" \
+#     --n-workers 1 \
+#     --limit 5
+
+# Example for running with Qwen and reasoning effort parameter
+python main_benchmark.py \
+    --explainer-model "vllm:Qwen/QwQ-32B-AWQ" \
+    --autograder-model "gpt-4o" \
+    --run-name "vllm_qwen_qwq" \
+    --n-workers 1 \
+# OPTIONAL if we want to use the reasoning effort parameter
+#     --vllm-reasoning-effort "medium" \
+
 

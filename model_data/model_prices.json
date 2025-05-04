@@ -58,5 +58,13 @@
   "grok-3-beta": {
     "input $/M": 3.00,
     "output $/M": 15.00
+  },
+  "TinyLlama/TinyLlama-1.1B-Chat-v1.0": {
+    "input $/M": 0.00,
+    "output $/M": 0.00
+  },
+  "Qwen/QwQ-32B-AWQ": {
+    "input $/M": 0.00,
+    "output $/M": 0.00
   }
 }

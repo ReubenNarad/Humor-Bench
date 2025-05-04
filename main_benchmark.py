@@ -189,15 +189,17 @@ async def worker(name, queue, explainer, autograder, results_list, pbar):
             queue.task_done() # Signal completion for the actual item
 
 
-async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=DEFAULT_INPUT_CSV, limit=None, n_workers=10, thinking_budget=None, reasoning_effort=None): # Add reasoning_effort parameter
+async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=DEFAULT_INPUT_CSV, limit=None, n_workers=10, thinking_budget=None, reasoning_effort=None, vllm_reasoning_effort=None):
     """Run the full explanation and grading benchmark process using a worker queue."""
     print(f"--- Starting Benchmark Run: {run_name} ---")
     print(f"Explainer: {explainer_model}, Autograder: {autograder_model}")
     print(f"Input: {input_csv}, Limit: {limit}, Workers: {n_workers}")
     if thinking_budget is not None:
         print(f"Claude Thinking Budget: {thinking_budget}") 
-    if reasoning_effort is not None: # Log reasoning effort if provided
+    if reasoning_effort is not None:
         print(f"OpenAI Reasoning Effort: {reasoning_effort}")
+    if vllm_reasoning_effort is not None:
+        print(f"VLLM Reasoning Effort: {vllm_reasoning_effort}")
 
     # Load the input annotations CSV
     try:
@@ -237,9 +239,10 @@ async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=D
             model=explainer_model, 
             api_key=xai_api_key, # Pass the key explicitly
             thinking_budget=thinking_budget,
-            reasoning_effort=reasoning_effort # Pass effort here
+            reasoning_effort=reasoning_effort, # Pass effort here
+            vllm_reasoning_effort=vllm_reasoning_effort # Pass VLLM effort here
         )
-        # Autograder does not get reasoning_effort
+        # Autograder does not get reasoning_effort or vllm_reasoning_effort
         autograder = AutograderClient(model=autograder_model, thinking_budget=thinking_budget) 
 
         # Add validation check (Now mostly handled within client __init__)
@@ -348,6 +351,9 @@ if __name__ == "__main__":
     # --- Add argument for reasoning effort ---
     parser.add_argument("--reasoning-effort", type=str, default=None, choices=["low", "medium", "high"],
                         help="Reasoning effort for OpenAI 'o' models (optional, only for Explainer)")
+    # --- Add argument for VLLM reasoning effort ---
+    parser.add_argument("--vllm-reasoning-effort", type=int, default=None,
+                        help="Reasoning effort for VLLM models (optional, integer value)")
     # --- Add argument for analyzing an existing file ---
     parser.add_argument("--analyze-only", type=str, default=None,
                         help="Path to an existing benchmark CSV file to analyze (skips running the benchmark)")
@@ -375,7 +381,8 @@ if __name__ == "__main__":
             args.limit,
             args.n_workers,
             args.thinking_budget, # Pass the budget
-            args.reasoning_effort # Pass the effort
+            args.reasoning_effort, # Pass the effort
+            args.vllm_reasoning_effort # Pass the VLLM effort
         ))
 
         # Analyze the results if the run was successful

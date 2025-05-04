@@ -20,7 +20,7 @@ class ExplainerClient:
     Supports reasoning effort for compatible OpenAI models.
     """
     
-    def __init__(self, model, family=None, api_key=None, thinking_budget=None, reasoning_effort=None):
+    def __init__(self, model, family=None, api_key=None, thinking_budget=None, reasoning_effort=None, vllm_reasoning_effort=None):
         """
         Initialize the explainer client.
         
@@ -30,10 +30,12 @@ class ExplainerClient:
             api_key: API key for the specified model family (optional)
             thinking_budget: Max tokens for Claude's extended thinking (optional)
             reasoning_effort: Effort level for OpenAI reasoning ('low', 'medium', 'high') (optional)
+            vllm_reasoning_effort: Reasoning effort level for VLLM models (integer value) (optional)
         """
         self.model = model
         self.thinking_budget = thinking_budget
         self.reasoning_effort = reasoning_effort
+        self.vllm_reasoning_effort = vllm_reasoning_effort
         
         # Infer the family from the model name if not provided
         if family is None:
@@ -43,7 +45,7 @@ class ExplainerClient:
         self.api_key = api_key
         
         # Validate family
-        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.XAI]:
+        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.XAI, MessageChain.VLLM]:
             raise ValueError(f"Unsupported model family: {family}")
         
         # Initialize the appropriate client based on the family
@@ -63,6 +65,13 @@ class ExplainerClient:
                 if self.reasoning_effort not in valid_efforts:
                      raise ValueError(f"Invalid reasoning_effort '{self.reasoning_effort}'. Must be one of {valid_efforts}.")
                 # Also add check for specific models if needed (already done in _make_api_call)
+        
+        # Add a check if vllm_reasoning_effort is provided for non-VLLM models
+        if self.vllm_reasoning_effort is not None:
+            if self.family != MessageChain.VLLM:
+                print(f"Warning: vllm_reasoning_effort provided for non-VLLM model '{self.model}' (Family: {self.family}). It will be ignored.")
+            elif not isinstance(self.vllm_reasoning_effort, int) or self.vllm_reasoning_effort < 0:
+                raise ValueError(f"Invalid vllm_reasoning_effort '{self.vllm_reasoning_effort}'. Must be a non-negative integer.")
     
     def _infer_family_from_model(self, model):
         """
@@ -75,6 +84,10 @@ class ExplainerClient:
             Inferred model family
         """
         model_lower = model.lower()
+        
+        # Check if this is a VLLM hosted model (explicit check)
+        if model_lower.startswith("vllm:"):
+            return MessageChain.VLLM
         
         # Check for specific prefixes first for Together API models
         if any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'qwen/', 'deepseek-ai/', 'togethercomputer/']):
@@ -167,6 +180,15 @@ class ExplainerClient:
                     raise ValueError("XAI API key not found in environment variables")
             
             return AsyncOpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+        
+        elif self.family == MessageChain.VLLM:
+            from openai import AsyncOpenAI
+            
+            # VLLM uses the OpenAI client with a local endpoint
+            return AsyncOpenAI(
+                api_key="NONE",  # VLLM doesn't require an API key
+                base_url="http://localhost:8000/v1"  # Default VLLM server endpoint
+            )
         
         raise ValueError(f"Unsupported model family for async client: {self.family}")
     
@@ -315,6 +337,45 @@ class ExplainerClient:
                 }
             }
 
+        # --- VLLM API ---
+        elif self.family == MessageChain.VLLM:
+            # Format model name - if it has a vllm: prefix, remove it
+            model_name = self.model
+            if model_name.startswith("vllm:"):
+                model_name = model_name[5:]
+            
+            # Prepare base API parameters
+            api_params = {
+                "model": model_name,
+                **formatted_messages,  # This should contain 'messages' key
+                "stream": False  # Ensure streaming is disabled
+            }
+            
+            # Add reasoning_effort if specified
+            if self.vllm_reasoning_effort is not None:
+                api_params["extra_body"] = {"reasoning_effort": self.vllm_reasoning_effort}
+                print(f"Using VLLM reasoning_effort: {self.vllm_reasoning_effort}")
+            
+            # Make API call
+            try:
+                response = await self.client.chat.completions.create(**api_params)
+                
+                # Extract usage if available
+                usage_data = {}
+                if hasattr(response, 'usage'):
+                    usage_data = {
+                        "tokens_in": getattr(response.usage, 'prompt_tokens', 0),
+                        "tokens_out": getattr(response.usage, 'completion_tokens', 0)
+                    }
+                
+                return {
+                    "content": response.choices[0].message.content,
+                    "usage": usage_data
+                }
+            except Exception as e:
+                print(f"Error calling VLLM API: {e}")
+                raise  # Re-raise the exception
+        
         # --- Together API (Uses OpenAI compatible structure but NOT reasoning) ---
         elif self.family == MessageChain.TOGETHER:
             api_params = {
@@ -457,6 +518,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo", help="The model to use")
     parser.add_argument("--thinking-budget", type=int, default=None, help="Optional thinking budget for Claude models")
     parser.add_argument("--reasoning-effort", type=str, default=None, choices=["low", "medium", "high"], help="Optional reasoning effort for OpenAI 'o' models")
+    parser.add_argument("--vllm-reasoning-effort", type=int, default=None, help="Optional reasoning effort for VLLM models (integer value)")
     args = parser.parse_args()
 
     # Test with the specified model
@@ -469,11 +531,12 @@ if __name__ == "__main__":
         client = ExplainerClient(
             model=args.model, 
             thinking_budget=args.thinking_budget,
-            reasoning_effort=args.reasoning_effort
+            reasoning_effort=args.reasoning_effort,
+            vllm_reasoning_effort=args.vllm_reasoning_effort
         )
         
         # Print the inferred family and parameters
-        print(f"\n=== Testing model: {args.model} (Family: {client.family}, Thinking Budget: {client.thinking_budget}, Reasoning Effort: {client.reasoning_effort}) ===")
+        print(f"\n=== Testing model: {args.model} (Family: {client.family}, Thinking Budget: {client.thinking_budget}, Reasoning Effort: {client.reasoning_effort}, VLLM Reasoning Effort: {client.vllm_reasoning_effort}) ===")
         
         # Run explanation
         result = await client.explain_cartoon(description, caption)
