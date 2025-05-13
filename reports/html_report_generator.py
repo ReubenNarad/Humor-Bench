@@ -168,13 +168,16 @@ HTML_TEMPLATE = """
                 <option value="pass_rate_per_row" selected>Pass Rate (Per Row)</option>
                 <option value="pass_rate_per_caption_all">Pass Rate (Per Caption - All)</option>
                 <option value="pass_rate_per_caption_some">Pass Rate (Per Caption - Some)</option>
-                <option value="hard_pass_rate_per_row">Hard Set Pass Rate (Per Row)</option>
+                <option value="wordplay_pass_rate_per_row">Pass Rate - Wordplay</option>
+                <option value="cultural_reference_pass_rate_per_row">Pass Rate - Cultural Reference</option>
+                <option value="toxic_or_shocking_pass_rate_per_row">Pass Rate - Toxic/Shocking</option>
             </select>
         </div>
         <div class="control-group">
             <label for="x-axis-select">X-Axis:</label>
             <select id="x-axis-select">
                 <option value="total_cost" selected>Total Cost ($)</option>
+                <option value="mean_output_tokens">Mean Response Tokens</option>
                 <option value="gpqa_score">GPQA Score (%)</option>
                 <option value="arc_agi_score">ARC-AGI Score (%)</option>
                 <option value="lmarena_elo_score">LM Arena ELO Score</option>

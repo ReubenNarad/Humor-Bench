@@ -34,5 +34,8 @@
   },
   "meta-llama-Llama-4-Scout-17B-16E-Instruct": {
     "score": null
+  },
+  "grok-3": {
+    "score": 1400
   }
 }

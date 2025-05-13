@@ -28,7 +28,7 @@ class ExplainerClient:
             model: The model name to use (e.g., "gpt-4o", "claude-3.7-sonnet...")
             family: The model family (optional, inferred if not provided)
             api_key: API key for the specified model family (optional)
-            thinking_budget: Max tokens for Claude's extended thinking (optional)
+            thinking_budget: Max tokens for Claude's extended thinking or Alibaba's reasoning (optional)
             reasoning_effort: Effort level for OpenAI reasoning ('low', 'medium', 'high') (optional)
         """
         self.model = model
@@ -43,15 +43,15 @@ class ExplainerClient:
         self.api_key = api_key
         
         # Validate family
-        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.XAI]:
+        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.XAI, MessageChain.ALIBABA]:
             raise ValueError(f"Unsupported model family: {family}")
         
         # Initialize the appropriate client based on the family
         self.client = self._initialize_client()
         
-        # Optional: Add a check if budget is provided for non-Claude models
-        if self.thinking_budget is not None and self.family != MessageChain.CLAUDE:
-             print(f"Warning: thinking_budget provided for non-Claude model '{self.model}' (Family: {self.family}). It will be ignored.")
+        # Optional: Add a check if budget is provided for non-Claude/non-Alibaba models
+        if self.thinking_budget is not None and self.family not in [MessageChain.CLAUDE, MessageChain.ALIBABA]:
+             print(f"Warning: thinking_budget provided for non-Claude/non-Alibaba model '{self.model}' (Family: {self.family}). It will be ignored.")
         
         # Optional: Add a check if reasoning_effort is provided for non-OpenAI models
         if self.reasoning_effort is not None:
@@ -76,6 +76,12 @@ class ExplainerClient:
         """
         model_lower = model.lower()
         
+        # Check for Alibaba Qwen models first for direct API usage
+        if 'qwen' in model_lower and 'dashscope' not in model_lower and not any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'deepseek-ai/', 'togethercomputer/']):
+            # This tries to catch direct qwen model names not intended for Together
+            # e.g. "qwen-plus-2025-04-28"
+            return MessageChain.ALIBABA
+
         # Check for specific prefixes first for Together API models
         if any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'qwen/', 'deepseek-ai/', 'togethercomputer/']):
              return MessageChain.TOGETHER
@@ -168,6 +174,16 @@ class ExplainerClient:
             
             return AsyncOpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
         
+        elif self.family == MessageChain.ALIBABA:
+            from openai import AsyncOpenAI
+            
+            if not api_key:
+                api_key = os.environ.get("DASHSCOPE_API_KEY")
+                if not api_key:
+                    raise ValueError("Alibaba Dashscope API key (DASHSCOPE_API_KEY) not found in environment variables")
+            
+            return AsyncOpenAI(api_key=api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
+        
         raise ValueError(f"Unsupported model family for async client: {self.family}")
     
     def format_prompt(self, description, caption):
@@ -216,9 +232,22 @@ class ExplainerClient:
             # If loop finishes without finding a text block, explanation_text remains the error message
             return explanation_text
         elif isinstance(response_content, str):
-            # Original logic for non-Claude responses (or simple string responses)
+            # First, remove any reasoning content that might be present
+            response_content = re.sub(r'<reasoning>.*?</reasoning>', '', response_content, flags=re.DOTALL)
+            
+            # Now extract the explanation
             explanation_match = re.search(r'<explanation>(.*?)</explanation>', response_content, re.DOTALL)
             explanation = explanation_match.group(1).strip() if explanation_match else response_content.strip()
+            return explanation
+        elif isinstance(response_content, dict) and "content" in response_content:
+            # Handle case where response_content might be the full response dict
+            # (e.g., if the Alibaba response dict was passed directly)
+            content = response_content["content"]
+            # Remove any reasoning tags
+            content = re.sub(r'<reasoning>.*?</reasoning>', '', content, flags=re.DOTALL)
+            # Extract explanation
+            explanation_match = re.search(r'<explanation>(.*?)</explanation>', content, re.DOTALL)
+            explanation = explanation_match.group(1).strip() if explanation_match else content.strip()
             return explanation
         else:
             # Handle unexpected response format
@@ -275,8 +304,8 @@ class ExplainerClient:
             # Check if reasoning effort is specified
             if self.reasoning_effort is not None:
                  # Optional: Add a check/warning if the model might not support it (e.g., non 'o' models)
-                if not any(prefix in self.model.lower() for prefix in ['o1', 'o4']):
-                     print(f"Warning: Using reasoning_effort='{self.reasoning_effort}' with model '{self.model}'. This parameter may only affect 'o' models like o1/o4.")
+                # if not any(prefix in self.model.lower() for prefix in ['o1', 'o4', 'o3']):
+                    #  print(f"Warning: Using reasoning_effort='{self.reasoning_effort}' with model '{self.model}'. This parameter may only affect 'o' models like o1/o3/o4.")
                 
                 # Use the responses.create endpoint for reasoning
                 try:
@@ -285,15 +314,26 @@ class ExplainerClient:
                         reasoning={"effort": self.reasoning_effort},
                         input=formatted_messages.get("messages", []) # Use 'input' key here
                     )
-                    # The response structure is different for responses.create
-                    # It doesn't seem to return usage data directly in the example.
-                    # We might need to adjust if usage is needed/available differently.
+                    
+                    usage_data = {"tokens_in": 0, "tokens_out": 0} # Default
+                    if hasattr(response, 'usage'):
+                        # Directly use input_tokens and output_tokens from the ResponseUsage object
+                        try:
+                            usage_data = {
+                                "tokens_in": response.usage.input_tokens,
+                                "tokens_out": response.usage.output_tokens,
+                            }
+                        except AttributeError as e:
+                            print(f"DEBUG - Error accessing input_tokens/output_tokens: {e}")
+                    else:
+                        print("DEBUG - No usage field found in response")
+                    
                     return {
                         "content": response.output_text, # Use output_text
-                        "usage": {} # Assuming usage is not returned here
+                        "usage": usage_data
                     }
-                except AttributeError:
-                     print(f"Error: The current OpenAI client might not support 'responses.create'. Falling back to chat completions.")
+                except AttributeError as e:
+                     print(f"Error: The current OpenAI client might not support 'responses.create': {e}. Falling back to chat completions.")
                      # Fall through to standard chat completions if responses.create fails
                 except Exception as e:
                     print(f"Error calling OpenAI responses.create: {e}")
@@ -392,7 +432,7 @@ class ExplainerClient:
             # --- Prepare API parameters ---
             api_params = {
                 "model": self.model,
-                "max_tokens": 10000,
+                "max_tokens": 20000,
                 "messages": messages,
             }
 
@@ -446,6 +486,124 @@ class ExplainerClient:
                     "tokens_out": completion_tokens,
                 }
             }
+        
+        elif self.family == MessageChain.ALIBABA:
+            # --- Set up API parameters for Alibaba models ---
+            api_params = {
+                "model": self.model,
+                **formatted_messages, # This should contain 'messages' key
+                "stream": True # REQUIRED for enable_thinking feature to work
+            }
+            
+            # --- Configure extra_body parameters for thinking/reasoning ---
+            extra_body_params = {}
+            thinking_budget = 0
+            
+            # Use thinking_budget if provided
+            if self.thinking_budget is not None and self.thinking_budget > 0:
+                thinking_budget = self.thinking_budget
+                extra_body_params["enable_thinking"] = True
+                extra_body_params["thinking_budget"] = thinking_budget
+                # print(f"Using thinking_budget={thinking_budget} with Alibaba model {self.model}")
+            
+            # Always enable thinking if not explicitly set but we want to capture reasoning
+            if not extra_body_params and "enable_thinking" not in extra_body_params:
+                # Default to a minimal thinking budget if none specified
+                extra_body_params["enable_thinking"] = True
+                extra_body_params["thinking_budget"] = 10  # Default minimal value
+            
+            if extra_body_params:
+                api_params["extra_body"] = extra_body_params
+                
+            # Add stream_options to include usage information
+            api_params["stream_options"] = {"include_usage": True}
+            
+            # --- Process streaming response ---
+            try:
+                stream = await self.client.chat.completions.create(**api_params)
+                
+                # Variables to collect the full response
+                reasoning_content = ""
+                response_content = ""
+                usage_data = None
+                
+                # Process each chunk in the stream
+                async for chunk in stream:
+                    # Check for usage data (usually in the last chunk)
+                    if chunk.usage is not None:
+                        usage_data = {
+                            "tokens_in": chunk.usage.prompt_tokens,
+                            "tokens_out": chunk.usage.completion_tokens
+                        }
+                    
+                    # Skip chunks with no choices
+                    if not chunk.choices:
+                        continue
+                    
+                    # Extract delta content
+                    delta = chunk.choices[0].delta
+                    
+                    # Collect reasoning content if available
+                    if hasattr(delta, "reasoning_content") and delta.reasoning_content:
+                        reasoning_content += delta.reasoning_content
+                    
+                    # Collect regular content
+                    if hasattr(delta, "content") and delta.content is not None:
+                        response_content += delta.content
+                
+                # If we didn't get usage info from the chunks, use defaults
+                if usage_data is None:
+                    usage_data = {"tokens_in": 0, "tokens_out": 0}
+                    print(f"Warning: No usage data received from Alibaba API for {self.model}")
+                
+                # Return combined response
+                # If reasoning content was captured, include it in the response content
+                # using a format that can be extracted later if needed
+                if reasoning_content:
+                    full_response = response_content
+                    # Store reasoning in a special XML tag that can be filtered out later if needed
+                    # The parse_response method can be updated to handle this if needed
+                    reasoning_tag = f"\n\n<reasoning>{reasoning_content}</reasoning>"
+                else:
+                    full_response = response_content
+                
+                return {
+                    "content": full_response,
+                    "usage": usage_data,
+                    "reasoning": reasoning_content  # Store reasoning separately for potential use
+                }
+                
+            except Exception as e:
+                print(f"Error in Alibaba streaming API call: {e}")
+                # Fall back to non-streaming as a last resort
+                print(f"Falling back to non-streaming API call for Alibaba model")
+                
+                # Remove streaming-specific parameters
+                api_params["stream"] = False
+                if "stream_options" in api_params:
+                    del api_params["stream_options"]
+                
+                # Make non-streaming call
+                try:
+                    response = await self.client.chat.completions.create(**api_params)
+                    
+                    # Extract usage data
+                    prompt_tokens = 0
+                    completion_tokens = 0
+                    if response.usage:
+                        prompt_tokens = getattr(response.usage, 'prompt_tokens', 0)
+                        completion_tokens = getattr(response.usage, 'completion_tokens', 0)
+                    
+                    return {
+                        "content": response.choices[0].message.content,
+                        "usage": {
+                            "tokens_in": prompt_tokens,
+                            "tokens_out": completion_tokens,
+                        }
+                    }
+                except Exception as fallback_error:
+                    print(f"Fallback non-streaming API call also failed: {fallback_error}")
+                    raise  # Re-raise the error
         
         raise ValueError(f"Unsupported model family for async API call: {self.family}")
 

@@ -195,7 +195,7 @@ async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=D
     print(f"Explainer: {explainer_model}, Autograder: {autograder_model}")
     print(f"Input: {input_csv}, Limit: {limit}, Workers: {n_workers}")
     if thinking_budget is not None:
-        print(f"Claude Thinking Budget: {thinking_budget}") 
+        print(f"Thinking Budget: {thinking_budget} (for Claude or Alibaba models)")
     if reasoning_effort is not None: # Log reasoning effort if provided
         print(f"OpenAI Reasoning Effort: {reasoning_effort}")
 
@@ -239,16 +239,20 @@ async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=D
             thinking_budget=thinking_budget,
             reasoning_effort=reasoning_effort # Pass effort here
         )
-        # Autograder does not get reasoning_effort
-        autograder = AutograderClient(model=autograder_model, thinking_budget=thinking_budget) 
+        # Autograder does not get reasoning_effort or thinking_budget
+        autograder = AutograderClient(model=autograder_model) 
 
         # Add validation check (Now mostly handled within client __init__)
         if thinking_budget is not None:
             is_claude_explainer = explainer.family == MessageChain.CLAUDE
-            is_claude_autograder = autograder.family == MessageChain.CLAUDE
-            if not is_claude_explainer and not is_claude_autograder:
-                 # This case is handled by the warning within the client init now
-                 pass
+            is_alibaba_explainer = explainer.family == MessageChain.ALIBABA
+            # No need to check autograder family for thinking_budget now
+            
+            if is_alibaba_explainer:
+                print(f"Using thinking budget for Alibaba explainer model: {thinking_budget} tokens")
+            # The warning for Claude explainer without budget, or other explainer families with budget
+            # is handled within ExplainerClient.__init__
+                
         # Check for reasoning effort with non-OpenAI explainer
         if reasoning_effort is not None and explainer.family != MessageChain.OPENAI:
              # This case is also handled by the warning within the client init now
@@ -344,7 +348,7 @@ if __name__ == "__main__":
     parser.add_argument("--n-workers", type=int, default=10,
                         help="Number of concurrent worker tasks (default: 10)")
     parser.add_argument("--thinking-budget", type=int, default=None,
-                        help="Max tokens for Claude extended thinking (optional, only for Claude models)")
+                        help="Max tokens for Claude extended thinking or Alibaba reasoning (optional)")
     # --- Add argument for reasoning effort ---
     parser.add_argument("--reasoning-effort", type=str, default=None, choices=["low", "medium", "high"],
                         help="Reasoning effort for OpenAI 'o' models (optional, only for Explainer)")

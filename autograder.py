@@ -40,7 +40,7 @@ class AutograderClient:
         self.api_key = api_key
         
         # Validate family
-        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER]:
+        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.ALIBABA]:
             raise ValueError(f"Unsupported model family: {family}")
         
         # Initialize the appropriate client based on the family
@@ -62,6 +62,10 @@ class AutograderClient:
         """
         model_lower = model.lower()
         
+        # Check for Alibaba Qwen models first for direct API usage
+        if 'qwen' in model_lower and 'dashscope' not in model_lower and not any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'deepseek-ai/', 'togethercomputer/']):
+            return MessageChain.ALIBABA
+
         # Check for specific prefixes first for Together API models
         if any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'qwen/', 'deepseek-ai/', 'togethercomputer/']):
              return MessageChain.TOGETHER
@@ -152,6 +156,16 @@ class AutograderClient:
                     raise ValueError("Together API key not found in environment variables")
             
             return AsyncOpenAI(api_key=api_key, base_url="https://api.together.xyz/v1")
+
+        elif self.family == MessageChain.ALIBABA:
+            from openai import AsyncOpenAI # Assuming AsyncOpenAI is desired, change if synchronous OpenAI is used elsewhere for autograder
+            
+            if not api_key:
+                api_key = os.environ.get("DASHSCOPE_API_KEY")
+                if not api_key:
+                    raise ValueError("Alibaba Dashscope API key (DASHSCOPE_API_KEY) not found in environment variables")
+            
+            return AsyncOpenAI(api_key=api_key, base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
     
     def format_prompt(self, description, caption, explanation, anticipated_point):
         """
@@ -373,6 +387,26 @@ class AutograderClient:
                 "usage": {
                     "tokens_in": response.usage.prompt_tokens,
                     "tokens_out": response.usage.completion_tokens
+                }
+            }
+        
+        elif self.family == MessageChain.ALIBABA:
+            api_params = {
+                "model": self.model,
+                **formatted_messages # This should contain 'messages' key
+            }
+            response = await self.client.chat.completions.create(**api_params)
+            prompt_tokens = 0
+            completion_tokens = 0
+            if response.usage:
+                prompt_tokens = getattr(response.usage, 'prompt_tokens', getattr(response.usage, 'input_tokens', 0))
+                completion_tokens = getattr(response.usage, 'completion_tokens', getattr(response.usage, 'output_tokens', 0))
+
+            return {
+                "content": response.choices[0].message.content,
+                "usage": {
+                    "tokens_in": prompt_tokens,
+                    "tokens_out": completion_tokens,
                 }
             }
         

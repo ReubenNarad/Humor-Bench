@@ -18,8 +18,8 @@
 # python main_benchmark.py \
 #     --explainer-model "claude-3-7-sonnet-latest" \
 #     --autograder-model "gpt-4o" \
-#     --thinking-budget 4096 \
-#     --run-name "claude_thinking_budget_4096"\
+#     --thinking-budget 16384 \
+#     --run-name "claude_thinking_budget_16384"\
 #     --n-workers 5
 
 # python main_benchmark.py \
@@ -28,4 +28,23 @@
 #     --run-name "grok_3_beta" \
 #     --n-workers 5 \
 
+# python main_benchmark.py \
+#     --explainer-model "o4-mini" \
+#     --autograder-model "gpt-4o" \
+#     --run-name "o4-mini_medium" \
+#     --n-workers 10 \
+#     --reasoning-effort="medium"
 
+# python main_benchmark.py \
+#     --explainer-model "qwen-plus-2025-04-28" \
+#     --autograder-model "gpt-4o" \
+#     --run-name "qwen_plus_reasoning_50" \
+#     --thinking-budget 600 \
+#     --n-workers 3
+
+
+python main_benchmark.py \
+    --explainer-model "gemini-2.5-pro-preview-03-25" \
+    --autograder-model "gpt-4o" \
+    --run-name "gemini_2.5_rerun" \
+    --n-workers 10

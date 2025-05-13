@@ -11,15 +11,16 @@ class MessageChain:
     CLAUDE = "claude"
     TOGETHER = "together"
     XAI = "xai"
+    ALIBABA = "alibaba"
     
     def __init__(self, family):
         """
         Initialize a message chain for a specific model family.
         
         Args:
-            family: The model family (openai, deepseek, gemini, claude, together, xai)
+            family: The model family (openai, deepseek, gemini, claude, together, xai, alibaba)
         """
-        if family not in [self.OPENAI, self.DEEPSEEK, self.GEMINI, self.CLAUDE, self.TOGETHER, self.XAI]:
+        if family not in [self.OPENAI, self.DEEPSEEK, self.GEMINI, self.CLAUDE, self.TOGETHER, self.XAI, self.ALIBABA]:
             raise ValueError(f"Unsupported model family: {family}")
         self.family = family
         self.messages = []
@@ -63,6 +64,8 @@ class MessageChain:
             return self._format_for_together()
         elif target_family == self.XAI:
             return self._format_for_openai()
+        elif target_family == self.ALIBABA:
+            return self._format_for_alibaba()
         else:
             raise ValueError(f"Unsupported model family: {target_family}")
     
@@ -98,4 +101,8 @@ class MessageChain:
     def _format_for_together(self):
         """Format messages for Together API."""
         # Together API uses the same format as OpenAI
+        return self._format_for_openai()
+
+    def _format_for_alibaba(self):
+        """Format messages for Alibaba API (OpenAI compatible)."""
         return self._format_for_openai()
