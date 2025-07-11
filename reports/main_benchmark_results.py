@@ -62,10 +62,13 @@ RUN_FILES_TO_ANALYZE = [
     # "runs/qwen_thinking_experiment/20250511_151057_qwen_plus_reasoning_50_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
     # "runs/qwen_thinking_experiment/20250511_155221_qwen_plus_reasoning_1000_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
     # "runs/qwen_thinking_experiment/20250511_164036_qwen_plus_reasoning_2000_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
-    # "runs/qwen_thinking_experiment/20250511_173236_qwen_plus_reasoning_200_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
+    "../runs/qwen_thinking_experiment/20250511_173236_qwen_plus_reasoning_200_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
     # "runs/qwen_thinking_experiment/20250511_180928_qwen_plus_reasoning_400_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
     # "runs/qwen_thinking_experiment/20250511_184731_qwen_plus_reasoning_600_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv"
+    "../runs/vllm/20250508_034834_vllm_phi4plus_exp-vllm_microsoft_Phi_4_reasoning_plus_ag-gpt_4o.csv",
+
 ]
+
 
 # Path to categorization files
 CATEGORY_FILES = {
@@ -90,7 +93,7 @@ MODEL_NICKNAMES = {
     "gemini-1-5-pro": "Gemini 1.5 pro",
     "meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8": "Llama 4 Maverick",
     "Qwen-Qwen2-5-72B-Instruct-Turbo": "Qwen 2.5 72B",
-    "qwen-plus-2025-04-28": "Qwen Plus 04-28", # Added for Qwen thinking experiment
+    "qwen-plus-2025-04-28": "Qwen 3", # Added for Qwen thinking experiment
     "meta-llama-Llama-4-Scout-17B-16E-Instruct": "Llama 4 Scout",
     "o1": "o1", # Base nickname for o1
     "o3": "o3", # Base nickname for o3
@@ -99,6 +102,7 @@ MODEL_NICKNAMES = {
     "grok-3-beta": "Grok 3", # Add nickname for grok-3-beta
     "grok-4-0709": "Grok 4", # Add nickname for grok-4-0709
     "deepseek-deepseek-r1-zero:free": "DeepSeek R1 Zero", # Corrected OpenRouter model name with colon
+    "vllm:microsoft/Phi-4-reasoning-plus": "Phi 4 Reasoning Plus", # Add nickname for vllm VLLM Phi-4 model
 }
 
 MODEL_PRICES_PATH = "../model_data/model_prices.json"
@@ -214,7 +218,7 @@ def calculate_explainer_cost(row, model_prices):
 
 # --- Main Analysis Logic ---
 # Remove view_mode parameter from function definition
-def generate_benchmark_data(run_files, prices_path, paper_plots=False, hard_leaderboard_only=False):
+def generate_benchmark_data(run_files, prices_path, paper_plots=False, leaderboard_only=False):
     """Analyzes multiple benchmark runs and generates data for interactive report."""
     run_summaries = []
     autograder_models_found = set()
@@ -368,8 +372,8 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False, hard_lead
     os.makedirs(run_output_dir, exist_ok=True)
     print(f"Created analysis run directory: {run_output_dir}")
     
-    # --- Find Hard Question Subset (only if hard_leaderboard_only is True) ---
-    if hard_leaderboard_only:
+    # --- Find Hard Question Subset (only if leaderboard_only is True) ---
+    if leaderboard_only:
         try:
             # Calculate pass rates for individual elements, not captions
             if all_data_frames:
@@ -437,39 +441,39 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False, hard_lead
                         # Get display name based on model nicknames
                         display_name = MODEL_NICKNAMES.get(model_name, model_name)
                         
-                        # Filter dataframe to only include hard elements
+                                                # Filter dataframe to only include hard elements
                         hard_df = df[df.apply(lambda row: (row['caption'], row['element']) in hard_elements, axis=1)]
-                    
-                    if not hard_df.empty:
-                        # Calculate pass rate on hard subset
-                        total_hard = len(hard_df)
-                        passed_hard = sum(hard_df['autograder_judgment'] == 'PASS')
-                        hard_pass_rate = passed_hard / total_hard if total_hard > 0 else 0
                         
-                        # Calculate regular pass rate for comparison
-                        total_all = len(df)
-                        passed_all = sum(df['autograder_judgment'] == 'PASS')
-                        all_pass_rate = passed_all / total_all if total_all > 0 else 0
-                        
-                        # Store results
-                        hard_subset_results.append({
-                            'model': model_name,
-                            'display_name': display_name,
-                            'hard_pass_rate': hard_pass_rate,
-                            'overall_pass_rate': all_pass_rate,
-                            'hard_questions_attempted': total_hard,
-                            'hard_questions_passed': passed_hard
-                        })
-                        
-                        # Print result
-                        print(f"  {display_name}: {passed_hard}/{total_hard} hard questions passed ({hard_pass_rate:.2%})")
+                        if not hard_df.empty:
+                            # Calculate pass rate on hard subset
+                            total_hard = len(hard_df)
+                            passed_hard = sum(hard_df['autograder_judgment'] == 'PASS')
+                            hard_pass_rate = passed_hard / total_hard if total_hard > 0 else 0
+                            
+                            # Calculate regular pass rate for comparison
+                            total_all = len(df)
+                            passed_all = sum(df['autograder_judgment'] == 'PASS')
+                            all_pass_rate = passed_all / total_all if total_all > 0 else 0
+                            
+                            # Store results
+                            hard_subset_results.append({
+                                'model': model_name,
+                                'display_name': display_name,
+                                'hard_pass_rate': hard_pass_rate,
+                                'overall_pass_rate': all_pass_rate,
+                                'hard_questions_attempted': total_hard,
+                                'hard_questions_passed': passed_hard
+                            })
+                            
+                            # Print result
+                            print(f"  {display_name}: {passed_hard}/{total_hard} hard questions passed ({hard_pass_rate:.2%})")
                 
                 if hard_subset_results:
                     # Convert results to DataFrame
                     hard_perf_df = pd.DataFrame(hard_subset_results)
                     
-                    # Sort by pass rate on hard subset (descending)
-                    hard_perf_df = hard_perf_df.sort_values('hard_pass_rate', ascending=False)
+                    # Sort by overall pass rate (descending) for main leaderboard
+                    hard_perf_df = hard_perf_df.sort_values('overall_pass_rate', ascending=False)
                     
                                     # Save to CSV
                 hard_perf_path = os.path.join(run_output_dir, "model_performance_on_hard_subset.csv")
@@ -481,48 +485,39 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False, hard_lead
                 leaderboard_df['rank'] = range(1, len(leaderboard_df) + 1)
                 leaderboard_df['hard_score_pct'] = (leaderboard_df['hard_pass_rate'] * 100).round(1)
                 leaderboard_df['overall_score_pct'] = (leaderboard_df['overall_pass_rate'] * 100).round(1)
-                leaderboard_df['performance_vs_overall'] = (leaderboard_df['hard_score_pct'] - leaderboard_df['overall_score_pct']).round(1)
                 
                 # Select and rename columns for clean leaderboard
-                leaderboard_clean = leaderboard_df[['rank', 'display_name', 'hard_questions_passed', 'hard_questions_attempted', 'hard_score_pct', 'overall_score_pct', 'performance_vs_overall']].copy()
-                leaderboard_clean.columns = ['Rank', 'Model', 'Hard Questions Passed', 'Hard Questions Attempted', 'Hard Subset Score (%)', 'Overall Score (%)', 'Difference (%)']
+                leaderboard_clean = leaderboard_df[['rank', 'display_name', 'overall_score_pct', 'hard_score_pct']].copy()
+                leaderboard_clean.columns = ['Rank', 'Model', 'Overall (%)', 'Hard Subset (%)']
                 
                 # Save leaderboard
-                leaderboard_path = os.path.join(run_output_dir, "hard_subset_leaderboard.csv")
+                leaderboard_path = os.path.join(run_output_dir, "leaderboard.csv")
                 leaderboard_clean.to_csv(leaderboard_path, index=False)
-                print(f"Saved hard subset leaderboard to: {leaderboard_path}")
+                print(f"Saved leaderboard to: {leaderboard_path}")
                 
                 # Print complete leaderboard in a pretty table format
-                print(f"\n🏆 Hard Subset Leaderboard (All Models):")
-                print("=" * 100)
-                print(f"{'Rank':<4} {'Model':<35} {'Score':<8} {'Pass/Total':<12} {'Overall':<8} {'Drop':<8}")
-                print("-" * 100)
+                print(f"\n🏆 HumorBench Leaderboard (All Models):")
+                print("=" * 80)
+                print(f"{'Rank':<4} {'Model':<35} {'Overall':<12} {'Hard Subset':<12}")
+                print("-" * 80)
                 
                 for _, row in leaderboard_clean.iterrows():
                     rank = f"{int(row['Rank'])}."
                     model = row['Model'][:34]  # Truncate long model names
-                    score = f"{row['Hard Subset Score (%)']}%"
-                    pass_total = f"{int(row['Hard Questions Passed'])}/{int(row['Hard Questions Attempted'])}"
-                    overall = f"{row['Overall Score (%)']}%"
-                    drop = f"{row['Difference (%)']}%"
+                    overall = f"{row['Overall (%)']}%"
+                    hard_subset = f"{row['Hard Subset (%)']}%"
                     
-                    print(f"{rank:<4} {model:<35} {score:<8} {pass_total:<12} {overall:<8} {drop:<8}")
+                    print(f"{rank:<4} {model:<35} {overall:<12} {hard_subset:<12}")
                 
-                print("=" * 100)
+                print("=" * 80)
                 print(f"📊 Key Insights:")
-                print(f"   • Best Hard Subset Performance: {leaderboard_clean.iloc[0]['Model']} ({leaderboard_clean.iloc[0]['Hard Subset Score (%)']}%)")
+                print(f"   • Best Overall Performance: {leaderboard_clean.iloc[0]['Model']} ({leaderboard_clean.iloc[0]['Overall (%)']}%)")
+                print(f"   • Best Hard Subset Performance: {leaderboard_clean.loc[leaderboard_clean['Hard Subset (%)'].idxmax(), 'Model']} ({leaderboard_clean['Hard Subset (%)'].max()}%)")
+                print(f"   • Average Overall Score: {leaderboard_clean['Overall (%)'].mean():.1f}%")
+                print(f"   • Average Hard Subset Score: {leaderboard_clean['Hard Subset (%)'].mean():.1f}%")
+                print("=" * 80)
                 
-                # Find model with smallest performance drop (least negative difference)
-                smallest_drop_idx = leaderboard_clean['Difference (%)'].abs().idxmin()
-                smallest_drop_model = leaderboard_clean.loc[smallest_drop_idx, 'Model']
-                smallest_drop_value = leaderboard_clean.loc[smallest_drop_idx, 'Difference (%)']
-                print(f"   • Smallest Performance Drop: {smallest_drop_model} ({abs(smallest_drop_value):.1f}%)")
-                
-                print(f"   • Average Hard Subset Score: {leaderboard_clean['Hard Subset Score (%)'].mean():.1f}%")
-                print(f"   • Average Performance Drop: {abs(leaderboard_clean['Difference (%)'].mean()):.1f}%")
-                print("=" * 100)
-                
-                # Exit early when doing hard leaderboard only
+                # Exit early when doing leaderboard only
                 return
                 
             else:
@@ -533,7 +528,7 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False, hard_lead
             print(f"\nError calculating hard subset: {e}")
             return
     
-    # --- Rest of analysis (only runs when hard_leaderboard_only=False) ---
+    # --- Rest of analysis (only runs when leaderboard_only=False) ---
     
     # --- Load category data and create subsets ---
     try:
@@ -1759,16 +1754,16 @@ def calculate_benchmark_correlations(df, y_field="pass_rate_per_row"):
 
 
 if __name__ == "__main__":
-    # Add argument parsing for paper_plots and hard_leaderboard options
+    # Add argument parsing for paper_plots and leaderboard options
     import argparse
     parser = argparse.ArgumentParser(description="Generate benchmark results")
     parser.add_argument("--paper-plots", action="store_true", 
                       help="Generate only paper-ready scatter plots without interactive HTML")
-    parser.add_argument("--hard-leaderboard", action="store_true",
-                      help="Generate only hard subset leaderboard analysis (no plots or other reports)")
+    parser.add_argument("--leaderboard", action="store_true",
+                      help="Generate only leaderboard analysis with overall and hard subset scores (no plots or other reports)")
     args = parser.parse_args()
 
     # Run the data generation and report creation
     generate_benchmark_data(RUN_FILES_TO_ANALYZE, MODEL_PRICES_PATH, 
                           paper_plots=args.paper_plots, 
-                          hard_leaderboard_only=args.hard_leaderboard)
+                          leaderboard_only=args.leaderboard)
