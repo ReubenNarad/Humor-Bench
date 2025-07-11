@@ -1,5 +1,7 @@
 import os
 import sys
+# Add parent directory to path so we can import from the explainer module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import json
 import re
@@ -8,6 +10,9 @@ import matplotlib.pyplot as plt # Re-enable for static plots
 from datetime import datetime
 import numpy as np
 # import argparse # No longer needed
+import plotly.graph_objects as go
+import plotly.express as px
+# MODEL_NICKNAMES is defined directly in this file, no need to import it
 
 # Import adjustText for preventing label overlaps
 try:
@@ -22,43 +27,18 @@ from html_report_generator import create_interactive_report
 # !! MODIFY THIS LIST to include the specific run files you want to compare !!
 # These should be the ORIGINAL outputs from main_benchmark.py in the main runs/ dir
 RUN_FILES_TO_ANALYZE = [
-    # "runs/main/20250410_093249_gpt4o_explainer_vs_gpt4o_grader_exp-gpt_4o_ag-gpt_4o.csv",
-    # "runs/main/20250409_234703_o3mini_explainer_vs_gpt4o_grader_exp-o3_mini_ag-gpt_4o.csv",
-    "../runs/main/20250409_231147_claude_explainer_vs_gpt4o_grader_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
-    # "runs/main/20250512_100811_gemini_2.5_rerun_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o.csv",
-    # "runs/main/20250410_143220_gemini_explainer_vs_gpt4o_grader_exp-gemini_1_5_pro_ag-gpt_4o.csv",
-    # "runs/main/20250416_102802_llama4_maverick_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Maverick_17B_128E_Instruct_FP8_ag-gpt_4o.csv",
-    # "runs/main/20250416_111359_qwen_explainer_vs_gpt4o_grader_exp-Qwen_Qwen2_5_72B_Instruct_Turbo_ag-gpt_4o.csv",
-    # "runs/main/20250416_123510_llama4_scout_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Scout_17B_16E_Instruct_ag-gpt_4o.csv",
-    # "runs/main/20250416_152132_o4-mini_explainer_vs_gpt4o_grader_exp-o4_mini_ag-gpt_4o.csv",
-    # "runs/main/20250416_182853_o3_explainer_vs_gpt4o_grader_exp-o3_ag-gpt_4o.csv",
-    # "runs/main/20250416_184110_o1_explainer_vs_gpt4o_grader_exp-o1_ag-gpt_4o.csv",
-    # "runs/main/20250428_145241_deepseek_v3_exp-deepseek_ai_DeepSeek_V3_ag-gpt_4o.csv",
-    # "runs/main/20250428_151728_deepseek_r1_exp-deepseek_ai_DeepSeek_R1_ag-gpt_4o.csv",
-    # "runs/main/20250502_222737_grok_3_beta_exp-grok_3_beta_ag-gpt_4o.csv",
-
-    # Claude thinking budget experiment
-    "../runs/claude_thinking_experiment/20250416_193729_claude_thinking_budget_1024_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
-    "../runs/claude_thinking_experiment/20250416_200436_claude_thinking_budget_2048_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
-    "../runs/claude_thinking_experiment/20250416_204832_claude_thinking_budget_4096_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
-    "../runs/claude_thinking_experiment/20250506_171410_claude_thinking_budget_8192_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
-    "../runs/claude_thinking_experiment/20250506_174903_claude_thinking_budget_16384_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
-
-    # OpenAI reasoning effort experiment
-    # "runs/openai_effort_experiment/20250506_180913_o3_high_exp-o3_ag-gpt_4o.csv",
-    # "runs/openai_effort_experiment/20250506_185500_o3_low_exp-o3_ag-gpt_4o.csv",
-    # "runs/openai_effort_experiment/20250506_190750_o4-mini_low_exp-o4_mini_ag-gpt_4o.csv",
-    # "runs/openai_effort_experiment/20250506_191011_o4-mini_medium_exp-o4_mini_ag-gpt_4o.csv",
-    # "runs/openai_effort_experiment/20250506_191022_o4-mini_high_exp-o4_mini_ag-gpt_4o.csv",
-    # "runs/openai_effort_experiment/20250506_191209_o3_medium_exp-o3_ag-gpt_4o.csv"
-
-    # Qwen reasoning experiment
-    # "runs/qwen_thinking_experiment/20250511_151057_qwen_plus_reasoning_50_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
-    # "runs/qwen_thinking_experiment/20250511_155221_qwen_plus_reasoning_1000_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
-    # "runs/qwen_thinking_experiment/20250511_164036_qwen_plus_reasoning_2000_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
-    # "runs/qwen_thinking_experiment/20250511_173236_qwen_plus_reasoning_200_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
-    # "runs/qwen_thinking_experiment/20250511_180928_qwen_plus_reasoning_400_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv",
-    # "runs/qwen_thinking_experiment/20250511_184731_qwen_plus_reasoning_600_exp-qwen_plus_2025_04_28_ag-gpt_4o.csv"
+    # Gemini 2.5 Flash models
+    "../runs/gemini_thinking_experiment/20250515_200029_gemini_thinking_budget_100_gemini_2.5_flash_preview_04_17_exp-gemini_2_5_flash_preview_04_17_ag-gpt_4o.csv",
+    "../runs/gemini_thinking_experiment/20250515_200254_gemini_thinking_budget_200_gemini_2.5_flash_preview_04_17_exp-gemini_2_5_flash_preview_04_17_ag-gpt_4o.csv",
+    "../runs/gemini_thinking_experiment/20250515_200601_gemini_thinking_budget_500_gemini_2.5_flash_preview_04_17_exp-gemini_2_5_flash_preview_04_17_ag-gpt_4o.csv",
+    "../runs/gemini_thinking_experiment/20250515_200959_gemini_thinking_budget_1000_gemini_2.5_flash_preview_04_17_exp-gemini_2_5_flash_preview_04_17_ag-gpt_4o.csv",
+    "../runs/gemini_thinking_experiment/20250515_201352_gemini_thinking_budget_4000_gemini_2.5_flash_preview_04_17_exp-gemini_2_5_flash_preview_04_17_ag-gpt_4o.csv",
+    
+    # Gemini 2.5 Pro models
+    "../runs/gemini_thinking_experiment/20250515_195211_gemini_thinking_budget_100_gemini_2.5_pro_preview_03_25_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o.csv",
+    # "../runs/gemini_thinking_experiment/20250515_195810_gemini_thinking_budget_200_gemini_2.5_pro_preview_03_25_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o.csv",
+    "../runs/gemini_thinking_experiment/20250515_214424_gemini_thinking_budget_500_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o copy.csv",
+    "../runs/gemini_thinking_experiment/20250515_215519_gemini_thinking_budget_1000_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o.csv"
 ]
 
 # Path to categorization files
@@ -74,22 +54,10 @@ HARD_SUBSET_SIZE = 100
 # Map extracted model names (after replacing _) to desired nicknames for the plot
 MODEL_NICKNAMES = {
     "gpt-4o": "gpt-4o",
-    "o4-mini": "o4-mini", # Base nickname for o4-mini
-    "o3-mini": "o3-mini",
-    "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet",  # Updated default Claude nickname
-    "gemini-2-5-pro-preview-03-25": "Gemini 2.5 pro",
-    "gemini-1-5-pro": "Gemini 1.5 pro",
-    "meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8": "Llama 4 Maverick",
-    "Qwen-Qwen2-5-72B-Instruct-Turbo": "Qwen 2.5 72B",
-    "qwen-plus-2025-04-28": "Qwen Plus 04-28", # Added for Qwen thinking experiment
-    "meta-llama-Llama-4-Scout-17B-16E-Instruct": "Llama 4 Scout",
-    "o1": "o1", # Base nickname for o1
-    "o3": "o3", # Base nickname for o3
-    "deepseek-ai-DeepSeek-V3": "DeepSeek V3", # Add nickname for DeepSeek V3
-    "deepseek-ai-DeepSeek-R1": "DeepSeek R1", # Add nickname for DeepSeek R1
-    "grok-3-beta": "Grok 3", # Add nickname for grok-3-beta
-    # Add specialized nicknames for Claude with thinkin  budgets
-    # These will be generated dynamically below
+    "gemini-2-5-pro-preview-03-25": "Gemini 2.5 Pro",
+    "gemini-2-5-flash-preview-04-17": "Gemini 2.5 Flash",
+    "gemini-1-5-pro": "Gemini 1.5 Pro",
+    "unknown": "Unknown Model"
 }
 
 MODEL_PRICES_PATH = "../model_data/model_prices.json"
@@ -320,21 +288,34 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
 
             # --- Calculate mean explainer output tokens ---
             mean_output_tokens = 0
+            mean_thinking_tokens = 0
+            mean_total_tokens = 0
             explainer_output_tokens = []
+            explainer_thinking_tokens = []
+            explainer_total_tokens = []
+            
             if 'explainer_usage' in df.columns:
                 for usage_str in df['explainer_usage']:
                     try:
                         if pd.notna(usage_str):
                             usage_json = json.loads(str(usage_str))
                             tokens_out = usage_json.get('tokens_out')
+                            thinking_tokens = usage_json.get('thinking_tokens', 0)  # Get thinking tokens, default to 0
+                            
                             if tokens_out is not None:
                                 explainer_output_tokens.append(int(tokens_out))
+                                explainer_thinking_tokens.append(int(thinking_tokens))
+                                explainer_total_tokens.append(int(tokens_out) + int(thinking_tokens))
                     except (json.JSONDecodeError, TypeError, AttributeError):
                         pass
                 
                 if explainer_output_tokens:
                     mean_output_tokens = sum(explainer_output_tokens) / len(explainer_output_tokens)
+                    mean_thinking_tokens = sum(explainer_thinking_tokens) / len(explainer_thinking_tokens) if explainer_thinking_tokens else 0
+                    mean_total_tokens = sum(explainer_total_tokens) / len(explainer_total_tokens) if explainer_total_tokens else 0
                     print(f"  Metrics - Mean Output Tokens: {mean_output_tokens:.2f}")
+                    print(f"  Metrics - Mean Thinking Tokens: {mean_thinking_tokens:.2f}")
+                    print(f"  Metrics - Mean Total Tokens (Output + Thinking): {mean_total_tokens:.2f}")
                 else:
                     print("  Warning: No valid explainer output token data found.")
             else:
@@ -352,7 +333,9 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
                 'total_cost': total_cost,
                 'explainer_cost': explainer_cost,  # Add this line to include the explainer-only cost
                 'avg_cost_per_row': avg_cost_per_row,
-                'mean_output_tokens': mean_output_tokens,  # Add mean token count to the summary
+                'mean_output_tokens': mean_output_tokens,  # Regular output tokens
+                'mean_thinking_tokens': mean_thinking_tokens,  # Add thinking tokens
+                'mean_total_tokens': mean_total_tokens,  # Add combined tokens
                 'source_file': filename
                 # Add other metrics like GPQA score here if available later
                 # 'gpqa_score': df['gpqa_score'].mean() # Example
@@ -501,43 +484,18 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
         plain_name = base_nickname
         html_label = base_nickname # Default to plain name
 
-        # 1. Check for OpenAI 'o' models with effort
-        if model_name in ['o1', 'o4-mini', 'o3', 'o3-mini']:
-            effort_match_low = re.search(rf"{model_name}_low", filename)
-            effort_match_medium = re.search(rf"{model_name}_medium", filename)
-            effort_match_high = re.search(rf"{model_name}_high", filename)
-
-            if effort_match_low:
-                plain_name = f"{base_nickname} low"
-            elif effort_match_medium:
-                plain_name = f"{base_nickname} medium"
-            elif effort_match_high:
-                plain_name = f"{base_nickname} high"
-            html_label = plain_name # HTML label is the same here
-
-        # 2. Check for Claude models with thinking budget
-        elif "claude" in model_name.lower():
-            # For thinking budget runs
-            if "thinking_budget" in filename:
-                budget_match = re.search(r'thinking_budget_(\d+k?)', filename)
-                if budget_match:
-                    budget_str = budget_match.group(1)
-                    # Simplified display format - just "Budget: {value}"
-                    plain_name = f"Budget: {budget_str}"
-                    html_label = f"Budget: {budget_str}"
-            # For base Claude model (no thinking budget specified)
-            else:
-                plain_name = f"Budget: 0"
-                html_label = f"Budget: 0"
-
-        # 3. Check for Qwen Plus 2025-04-28 models with reasoning value
-        elif model_name == "qwen-plus-2025-04-28" and "reasoning" in filename:
-            reasoning_match = re.search(r'reasoning_(\d+)', filename)
-            if reasoning_match:
-                reasoning_val = reasoning_match.group(1)
-                # base_nickname here is "Qwen Plus 04-28" from MODEL_NICKNAMES
-                plain_name = f"{base_nickname} Reasoning {reasoning_val}"
-                html_label = f"{base_nickname}<br><span style='color:grey;'>Reasoning: {reasoning_val}</span>"
+        # Look for thinking budget in the filename for Gemini models
+        if "gemini" in model_name.lower() and "thinking_budget" in filename:
+            budget_match = re.search(r'thinking_budget_(\d+)', filename)
+            if budget_match:
+                budget_str = budget_match.group(1)
+                
+                # Determine if Pro or Flash
+                model_type = "Pro" if "pro" in model_name.lower() else "Flash"
+                
+                # Simplified plain name including model type
+                plain_name = f"{model_type} Budget: {budget_str}"
+                html_label = f"{model_type} Budget: {budget_str}"
 
         return pd.Series([plain_name, html_label], index=['display_name', 'plot_label'])
 
@@ -567,7 +525,7 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
     # --- Create Timestamped Output Directory ---
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     # New directory structure: analysis/runs/TIMESTAMP_AUTOGRADER/
-    run_output_dir = os.path.join(BASE_ANALYSIS_DIR, RUNS_SUBDIR, "claude_experiment")
+    run_output_dir = os.path.join(BASE_ANALYSIS_DIR, RUNS_SUBDIR, "gemini_thinking_experiment")
     os.makedirs(run_output_dir, exist_ok=True)
     print(f"Created analysis run directory: {run_output_dir}")
 
@@ -581,11 +539,19 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
         'num_rows', 'num_captions'
     ]]
     
-    # Add mean_output_tokens field if it exists
+    # Add mean token fields if they exist
     if 'mean_output_tokens' in summary_df.columns:
         plot_data_df['mean_output_tokens'] = summary_df['mean_output_tokens']
         print(f"Added mean output token data for {plot_data_df['mean_output_tokens'].notna().sum()} of {len(plot_data_df)} models")
     
+    if 'mean_thinking_tokens' in summary_df.columns:
+        plot_data_df['mean_thinking_tokens'] = summary_df['mean_thinking_tokens']
+        print(f"Added mean thinking token data for {plot_data_df['mean_thinking_tokens'].notna().sum()} of {len(plot_data_df)} models")
+        
+    if 'mean_total_tokens' in summary_df.columns:
+        plot_data_df['mean_total_tokens'] = summary_df['mean_total_tokens']
+        print(f"Added mean total token data for {plot_data_df['mean_total_tokens'].notna().sum()} of {len(plot_data_df)} models")
+
     # Add plot_label column if it exists in summary_df
     if 'plot_label' in summary_df.columns:
         plot_data_df['plot_label'] = summary_df['plot_label']
@@ -734,23 +700,13 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
 
             def extract_experiment_sort_key(display_name_series):
                 display_name = str(display_name_series) # Ensure it's a string
-                # Try Claude thinking budget first (e.g., "Claude 3.7 Sonnet 1024")
-                claude_match = re.search(r'Claude.*?Sonnet\s+(\d+k?)', display_name)
-                if claude_match:
-                    val_str = claude_match.group(1)
-                    if 'k' in val_str.lower(): 
-                        return int(val_str.lower().replace('k', '')) 
-                    return int(val_str)
-
-                # Try Qwen reasoning value (e.g., "Qwen Plus 04-28 Reasoning 50")
-                qwen_match = re.search(r"Qwen Plus 04-28 Reasoning (\d+)", display_name) # Made Qwen match more specific
-                if qwen_match:
-                    return int(qwen_match.group(1))
+                # Look for Gemini thinking budget (e.g., "Gemini 2.5 Pro 512")
+                gemini_match = re.search(r'Gemini.*?\s(\d+)$', display_name)
+                if gemini_match:
+                    return int(gemini_match.group(1))
                 
                 # Check for base models to assign a sort key of 0
-                if display_name == MODEL_NICKNAMES.get("claude-3-7-sonnet-latest"): # Base Claude Sonnet
-                    return 0
-                if display_name == MODEL_NICKNAMES.get("qwen-plus-2025-04-28"):      # Base Qwen Plus 04-28
+                if display_name in MODEL_NICKNAMES.values():
                     return 0
                 
                 return None # For other models without a specific numeric experiment value or known base name
@@ -774,28 +730,27 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
             chart_df['pass_rate_per_row'] = pd.to_numeric(chart_df['pass_rate_per_row'], errors='coerce')
             chart_df.dropna(subset=['pass_rate_per_row'], inplace=True)
 
-            # Extract just the thinking budget value for x-axis labels
-            def extract_budget_label(display_name):
+            def extract_thinking_label(display_name):
                 display_name = str(display_name)
-                # Try Claude thinking budget first (e.g., "Claude 3.7 Sonnet 1024")
-                claude_match = re.search(r'Claude.*?Sonnet\s+(\d+k?)', display_name)
-                if claude_match:
-                    return claude_match.group(1)  # Return the budget value
+                # Try Gemini thinking budget (e.g., "Gemini 2.5 Pro 512")
+                gemini_match = re.search(r'Gemini.*?\s(\d+)$', display_name)
+                if gemini_match:
+                    return gemini_match.group(1)  # Return just the budget value
                 
                 # Check for base models to assign "0"
-                if display_name == MODEL_NICKNAMES.get("claude-3-7-sonnet-latest"):
+                if display_name in MODEL_NICKNAMES.values():
                     return "0"
                     
                 return display_name  # Fallback to display name for other models
 
-            # Create budget labels for x-axis
-            chart_df['budget_label'] = chart_df['display_name'].apply(extract_budget_label)
+            # Create thinking budget labels for x-axis
+            chart_df['thinking_label'] = chart_df['display_name'].apply(extract_thinking_label)
 
-            bars = plt.bar(chart_df['budget_label'], chart_df['pass_rate_per_row'] * 100, color=chart_df['plot_color'])
+            bars = plt.bar(chart_df['thinking_label'], chart_df['pass_rate_per_row'] * 100, color=chart_df['plot_color'])
 
             plt.xlabel("Thinking budget", fontsize=22)
             plt.ylabel("HumorBench Score (%)", fontsize=22)
-            # plt.title(f"Claude 3.7 thinking budget experiment", fontsize=24)
+            # plt.title(f"Gemini Thinking Budget Experiment", fontsize=24)
             plt.xticks(rotation=45, ha="right", fontsize=16)
             
             # Rescale Y-axis
@@ -988,19 +943,26 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
         'unknown': 1        
     }
     
-    # Placeholder offsets for mean response tokens plot (Claude thinking budget experiment)
+    # Placeholder offsets for Mean Response Tokens (Reasoning + Answer) plot
     mean_token_offsets = {
-        "Budget: 0": (15, -10),  # Placeholder - adjust as needed
-        "Budget: 1024": (-150, 0), 
-        "Budget: 2048": (-150, 0),
-        "Budget: 4096": (-150, 0),
-        "Budget: 8192": (-150, 0),
-        "Budget: 16384": (-150, -30)
+        # Flash models
+        "Flash Budget: 100": (-10, -35),
+        "Flash Budget: 200": (10, 5),
+        "Flash Budget: 500": (-40, 25),
+        "Flash Budget: 1000": (-150, -7),
+        "Flash Budget: 4000": (-110, -40),
+        
+        # Pro models
+        "Pro Budget: 100": (10, -35),
+        "Pro Budget: 200": (-70, 5),
+        "Pro Budget: 500": (10, 15),
+        "Pro Budget: 1000": (-140, -30)
     }
     
     # Map x_axis field to the appropriate offset dictionary
     axis_to_offsets = {
         "mean_output_tokens": mean_token_offsets,
+        "mean_total_tokens": mean_token_offsets,  # Use same offsets for total tokens
         # Add other axes if needed
     }
     
@@ -1008,11 +970,11 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     plt.rcParams.update({
         'font.size': 100,             
         'axes.labelsize': 22,        # Increased from 18 to 22
-        'axes.titlesize': 24,        # Increased from 20 to 24
+        'axes.titlesize': 30,        # Increased to match other plots
         'xtick.labelsize': 16,       # Increased from 14 to 16
         'ytick.labelsize': 16,       # Increased from 14 to 16
-        'legend.fontsize': 14,       
-        'legend.title_fontsize': 16, 
+        'legend.fontsize': 18,       
+        'legend.title_fontsize': 20, 
         'lines.linewidth': 2.5,      
         'lines.markersize': 12,      
         'lines.markeredgewidth': 2,  
@@ -1031,7 +993,10 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     # Define X-axis options to generate multiple plots
     x_axis_options = [
         # {"field": "explainer_cost", "label": "Run Cost ($)", "log_scale": False},
-        {"field": "mean_output_tokens", "label": "Mean Output Tokens", "log_scale": False},
+        {"field": "mean_total_tokens", "label": "Mean Response + Thinking Tokens", "log_scale": False},
+        # Comment these out to focus just on the combined plot
+        # {"field": "mean_output_tokens", "label": "Mean Response Tokens Only", "log_scale": False},
+        # {"field": "mean_thinking_tokens", "label": "Mean Thinking Tokens Only", "log_scale": False},
         # {"field": "gpqa_score", "label": "GPQA Score (%)", "log_scale": False},
         # {"field": "arc_agi_score", "label": "ARC-AGI Score (%)", "log_scale": False},
         # {"field": "lmarena_elo_score", "label": "LM Arena ELO Score", "log_scale": False}
@@ -1088,8 +1053,7 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                         color=color,
                         edgecolors='black',
                         linewidths=line_width,  # Use family-specific linewidth
-                        alpha=0.8,
-                        label=family.replace('_', ' ').title()  # Format family name for legend
+                        alpha=0.8
                     )
                 
                     # Add model names as annotations with larger font
@@ -1107,7 +1071,7 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                         # Apply model-specific offset if available for this plot type
                         if model_name in current_offsets:
                             offset_x, offset_y = current_offsets[model_name]
-                            
+
                         # Apply the offsets
                         plt.annotate(
                             model_name,
@@ -1117,54 +1081,84 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                             fontsize=20,  # Increased from 12 to 16
                         )
                 
-                # Add dotted line connecting Claude thinking budget points in mean_output_tokens plot
-                if x_option["field"] == "mean_output_tokens":
-                    # Create a separate dataframe for Claude models
-                    claude_df = plot_df[plot_df['explainer_family'] == 'anthropic'].copy()
+                # Add dotted lines connecting Gemini models by thinking budget
+                if x_option["field"] == "mean_output_tokens" or x_option["field"] == "mean_total_tokens":
+                    # Create separate dataframes for Pro and Flash models
+                    pro_df = plot_df[plot_df['display_name'].str.contains('Pro Budget:')].copy()
+                    flash_df = plot_df[plot_df['display_name'].str.contains('Flash Budget:')].copy()
                     
-                    # Sort dataframes by thinking budget size
-                    # Extract budget value and add as column for sorting
+                    # Extract thinking budget and add as column for sorting
                     def get_budget_size(name):
-                        budget_match = re.search(r'Budget: (\d+k?)', name)
+                        budget_match = re.search(r'Budget: (\d+)', name)
                         if budget_match:
-                            budget_str = budget_match.group(1)
-                            if 'k' in budget_str:
-                                return int(budget_str.replace('k', '000'))
-                            return int(budget_str)
+                            return int(budget_match.group(1))
                         return 0
                     
-                    claude_df['budget'] = claude_df['display_name'].apply(get_budget_size)
-                    claude_df = claude_df.sort_values('budget')
+                    # Process Pro models
+                    if not pro_df.empty:
+                        # Add budget as a column and sort by it
+                        pro_df['budget'] = pro_df['display_name'].apply(get_budget_size)
+                        pro_df = pro_df.sort_values('budget')
+                        
+                        # Draw the line if we have at least 2 points
+                        if len(pro_df) >= 2:
+                            plt.plot(
+                                pro_df[x_option["field"]],
+                                pro_df[y_option["field"]] * 100,
+                                '--',  # Dashed line
+                                color='#6A0DAD',  # Dark purple for Pro
+                                linewidth=2,
+                                alpha=0.5
+                            )
+                            print(f"Added dotted line connecting thinking budget points for Pro models")
                     
-                    # Draw the dotted line if we have at least 2 points
-                    if len(claude_df) >= 2:
-                        plt.plot(
-                            claude_df[x_option["field"]],
-                            claude_df[y_option["field"]] * 100,
-                            '--',  # Dashed line
-                            color=FAMILY_COLORS['anthropic'],  # Use anthropic color (beige)
-                            linewidth=2,
-                            alpha=0.85  # Make it faint
-                        )
-                        print(f"Added dotted line connecting Claude thinking budget points")
+                    # Process Flash models
+                    if not flash_df.empty:
+                        # Add budget as a column and sort by it
+                        flash_df['budget'] = flash_df['display_name'].apply(get_budget_size)
+                        flash_df = flash_df.sort_values('budget')
+                        
+                        # Draw the line if we have at least 2 points
+                        if len(flash_df) >= 2:
+                            plt.plot(
+                                flash_df[x_option["field"]],
+                                flash_df[y_option["field"]] * 100,
+                                '--',  # Dashed line
+                                color='#8055e6',  # Regular purple for Flash
+                                linewidth=2,
+                                alpha=0.5
+                            )
+                            print(f"Added dotted line connecting thinking budget points for Flash models")
                 
                 # Set axis labels with larger font
                 plt.xlabel(x_option["label"], fontsize=22)
                 plt.ylabel(y_option["label"], fontsize=22)
                 
                 # Set title
-                plot_title = f"Claude 3.7 Sonnet, Thinking Budget"
+                plot_title = f"Benchmark: {y_option['label']} vs {x_option['label']}"
                 if x_option["field"] == "explainer_cost":
                     plot_title = f"HumorBench"
-                # plt.title(plot_title, fontsize=24)
+                elif x_option["field"] == "mean_output_tokens":
+                    plot_title = f"Gemini Thinking Budget Experiment"
+                # Remove title as requested
+                # plt.title(plot_title, fontsize=30)
                 
                 # Set x-axis limits only for specific plots, not for mean tokens
                 if x_option["field"] == "explainer_cost":
                     plt.xlim(3.5, 6)
                 elif x_option["field"] == "mean_output_tokens":
-                    # Set x-axis limit to 1000 as requested
-                    plt.xlim(160, 600)
-                    plt.ylim(80,84)
+                    # Set x-axis limit as requested - expand slightly to give room for labels
+                    plt.xlim(105, 125)
+                    # Set y-axis range for better visibility
+                    plt.ylim(72.5, 76.5)
+                elif x_option["field"] == "mean_total_tokens":
+                    # Set limits for total tokens (might need adjustment after seeing the values)
+                    plt.xlim(100, 800)  # Wider range to accommodate thinking tokens
+                    plt.ylim(72, 82)  # Slightly wider range to accommodate both model sets
+                elif x_option["field"] == "mean_thinking_tokens":
+                    # Set limits for just thinking tokens
+                    plt.xlim(0, 500)  # Start at 0, might need adjustment
+                    plt.ylim(72.5, 76.5)
                 
                 # Apply log scale with more tick marks if specified
                 if x_option["log_scale"]:
@@ -1188,11 +1182,6 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                 # Add grid for better readability
                 plt.grid(True, linestyle='--', alpha=0.7)
                 
-                # Add legend showing both color and shape for each family
-                # legend = plt.legend(title="Model Family", title_fontsize=16, 
-                #                   loc='lower right', frameon=True, framealpha=0.9)
-                # legend.get_frame().set_linewidth(2)
-                
                 # Adjust layout
                 plt.tight_layout()
                 
@@ -1201,7 +1190,17 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                 x_field = x_option["field"].replace("_", "-")
                 log_suffix = "_log" if x_option["log_scale"] else ""
                 
-                filename = f"claude_reasoning_exp.png"
+                # Use a different filename for each x-axis type
+                if x_option["field"] == "mean_total_tokens":
+                    filename = f"gemini_thinking_total_tokens.png"
+                elif x_option["field"] == "mean_output_tokens":
+                    filename = f"gemini_response_tokens_only.png"
+                elif x_option["field"] == "mean_thinking_tokens":
+                    filename = f"gemini_thinking_tokens_only.png"
+                else:
+                    # Generic filename for other plots
+                    filename = f"{x_field}_vs_{y_field}{log_suffix}.png"
+                
                 filepath = os.path.join(run_output_dir, filename)
                 
                 # Save with high DPI for print quality
@@ -1212,44 +1211,6 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                 
             except Exception as e:
                 print(f"Error generating plot for {x_option['label']} vs {y_option['label']}: {e}")
-    
-    # Generate a single plot with a legend showing all families with their colors and markers
-    try:
-        plt.figure(figsize=(8, 6))
-        
-        # Plot dummy points for each family just for the legend
-        for family in FAMILY_COLORS.keys():
-            if family != 'unknown':  # Skip unknown in the legend
-                marker = family_markers.get(family, 'o')
-                color = FAMILY_COLORS.get(family, 'gray')
-                marker_size = family_marker_sizes.get(family, 180)
-                line_width = family_marker_linewidths.get(family, 2)
-                
-                plt.scatter(
-                    [], [], 
-                    marker=marker, 
-                    s=marker_size, 
-                    color=color, 
-                    edgecolors='black', 
-                    linewidths=line_width, 
-                    label=family if family == 'XAI' else family.replace('_', ' ').title()
-                )
-        
-        plt.axis('off')  # Hide axes
-        # Create legend
-        plt.legend(title="Model Families", title_fontsize=16, fontsize=14,
-                loc='center', frameon=True, ncol=2)
-        plt.tight_layout()
-        
-        # Save legend as separate file
-        # legend_path = os.path.join(run_output_dir, "paper_plot_legend.png")
-        # plt.savefig(legend_path, dpi=300, bbox_inches='tight')
-        # plt.close()
-        
-        print(f"Saved family legend to: {legend_path}")
-        
-    except Exception as e:
-        print(f"Error generating legend: {e}")
     
     print("\nStatic scatter plots generation complete.")
 

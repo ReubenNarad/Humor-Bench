@@ -1028,8 +1028,8 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
         "o3 medium": (10,0),
         "o3 high": (-00, -30),
         "o4-mini low": (0, 15),
-        "o4-mini medium": (-100, 20),
-        "o4-mini high": (-130, 10)
+        "o4-mini medium": (-100, 15),
+        "o4-mini high": (-130, 20)
     }
     
     # Map x_axis field to the appropriate offset dictionary
@@ -1040,9 +1040,9 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     
     # Set up figure style for academic paper with bigger text/labels
     plt.rcParams.update({
-        'font.size': 16,             
+        'font.size': 100,             
         'axes.labelsize': 22,        # Increased from 18 to 22
-        'axes.titlesize': 24,        # Increased from 20 to 24
+        'axes.titlesize': 30,        # Increased from 20 to 24
         'xtick.labelsize': 16,       # Increased from 14 to 16
         'ytick.labelsize': 16,       # Increased from 14 to 16
         'legend.fontsize': 14,       
@@ -1065,7 +1065,7 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     # Define X-axis options to generate multiple plots
     x_axis_options = [
         # {"field": "explainer_cost", "label": "Run Cost ($)", "log_scale": False},
-        {"field": "mean_output_tokens", "label": "Mean Response Tokens (Reasoning + Answer)", "log_scale": False},
+        {"field": "mean_output_tokens", "label": "Mean Output Tokens", "log_scale": False},
         # {"field": "gpqa_score", "label": "GPQA Score (%)", "log_scale": False},
         # {"field": "arc_agi_score", "label": "ARC-AGI Score (%)", "log_scale": False},
         # {"field": "lmarena_elo_score", "label": "LM Arena ELO Score", "log_scale": False}

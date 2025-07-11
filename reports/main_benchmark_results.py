@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt # Re-enable for static plots
 # import matplotlib.patches as mpatches # No longer needed for static plots
 from datetime import datetime
 import numpy as np
+from scipy.stats import spearmanr  # Add import for Spearman correlation
 # import argparse # No longer needed
 
 # Import adjustText for preventing label overlaps
@@ -23,19 +24,23 @@ from html_report_generator import create_interactive_report
 # These should be the ORIGINAL outputs from main_benchmark.py in the main runs/ dir
 RUN_FILES_TO_ANALYZE = [
     "../runs/main/20250410_093249_gpt4o_explainer_vs_gpt4o_grader_exp-gpt_4o_ag-gpt_4o.csv",
-    "../runs/main/20250409_234703_o3mini_explainer_vs_gpt4o_grader_exp-o3_mini_ag-gpt_4o.csv",
+    # "../runs/main/20250409_234703_o3mini_explainer_vs_gpt4o_grader_exp-o3_mini_ag-gpt_4o.csv",
     "../runs/main/20250409_231147_claude_explainer_vs_gpt4o_grader_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
+    "../runs/20250522_173648_claude-4-sonnet_exp-claude_sonnet_4_20250514_ag-gpt_4o.csv",
     "../runs/main/20250512_100811_gemini_2.5_rerun_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o.csv",
-    "../runs/main/20250410_143220_gemini_explainer_vs_gpt4o_grader_exp-gemini_1_5_pro_ag-gpt_4o.csv",
-    "../runs/main/20250416_102802_llama4_maverick_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Maverick_17B_128E_Instruct_FP8_ag-gpt_4o.csv",
-    "../runs/main/20250416_111359_qwen_explainer_vs_gpt4o_grader_exp-Qwen_Qwen2_5_72B_Instruct_Turbo_ag-gpt_4o.csv",
-    "../runs/main/20250416_123510_llama4_scout_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Scout_17B_16E_Instruct_ag-gpt_4o.csv",
-    "../runs/main/20250416_152132_o4-mini_explainer_vs_gpt4o_grader_exp-o4_mini_ag-gpt_4o.csv",
+    # "../runs/main/20250410_143220_gemini_explainer_vs_gpt4o_grader_exp-gemini_1_5_pro_ag-gpt_4o.csv",
+    # "../runs/main/20250416_102802_llama4_maverick_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Maverick_17B_128E_Instruct_FP8_ag-gpt_4o.csv",
+    # "../runs/main/20250416_111359_qwen_explainer_vs_gpt4o_grader_exp-Qwen_Qwen2_5_72B_Instruct_Turbo_ag-gpt_4o.csv",
+    # "../runs/main/20250416_123510_llama4_scout_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Scout_17B_16E_Instruct_ag-gpt_4o.csv",
+    # "../runs/main/20250416_152132_o4-mini_explainer_vs_gpt4o_grader_exp-o4_mini_ag-gpt_4o.csv",
     "../runs/main/20250416_182853_o3_explainer_vs_gpt4o_grader_exp-o3_ag-gpt_4o.csv",
-    "../runs/main/20250416_184110_o1_explainer_vs_gpt4o_grader_exp-o1_ag-gpt_4o.csv",
-    "../runs/main/20250428_145241_deepseek_v3_exp-deepseek_ai_DeepSeek_V3_ag-gpt_4o.csv",
-    "../runs/main/20250428_151728_deepseek_r1_exp-deepseek_ai_DeepSeek_R1_ag-gpt_4o.csv",
+    # "../runs/main/20250416_184110_o1_explainer_vs_gpt4o_grader_exp-o1_ag-gpt_4o.csv",
+    # "../runs/main/20250428_145241_deepseek_v3_exp-deepseek_ai_DeepSeek_V3_ag-gpt_4o.csv",
+    # "../runs/main/20250428_151728_deepseek_r1_exp-deepseek_ai_DeepSeek_R1_ag-gpt_4o.csv",
     "../runs/main/20250502_222737_grok_3_beta_exp-grok_3_beta_ag-gpt_4o.csv",
+    "../runs/main/20250710_095959_grok_4_0709_exp-grok_4_0709_ag-gpt_4o.csv",
+    # "../runs/main/20250513_114914_openrouter_deepseek_r1_zero_exp-deepseek_deepseek_r1_zero:free_ag-gpt_4o.csv"
+    
 
     # Claude thinking budget experiment
     # "runs/claude_thinking_experiment/20250416_193729_claude_thinking_budget_1024_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
@@ -78,6 +83,7 @@ MODEL_NICKNAMES = {
     "o3-mini": "o3-mini",
     "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet",  # Updated default Claude nickname
     "gemini-2-5-pro-preview-03-25": "Gemini 2.5 pro",
+    "gemini-2-5-flash-preview-04-17": "Gemini 2.5 flash",
     "gemini-1-5-pro": "Gemini 1.5 pro",
     "meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8": "Llama 4 Maverick",
     "Qwen-Qwen2-5-72B-Instruct-Turbo": "Qwen 2.5 72B",
@@ -88,8 +94,7 @@ MODEL_NICKNAMES = {
     "deepseek-ai-DeepSeek-V3": "DeepSeek V3", # Add nickname for DeepSeek V3
     "deepseek-ai-DeepSeek-R1": "DeepSeek R1", # Add nickname for DeepSeek R1
     "grok-3-beta": "Grok 3", # Add nickname for grok-3-beta
-    # Add specialized nicknames for Claude with thinkin  budgets
-    # These will be generated dynamically below
+    "deepseek-deepseek-r1-zero:free": "DeepSeek R1 Zero", # Corrected OpenRouter model name with colon
 }
 
 MODEL_PRICES_PATH = "../model_data/model_prices.json"
@@ -115,6 +120,11 @@ def infer_family_from_model(model):
     Infer the model family from the model name string.
     """
     model_lower = model.lower()
+    
+    # Check for OpenRouter models (models with :free or :pro suffix)
+    if '/' in model_lower and (':free' in model_lower or ':pro' in model_lower):
+        return 'open_source'
+        
     # Check for specific prefixes first for Together API models
     # Updated list based on common providers and model_prices.json structure
     if 'qwen' in model_lower: # Specific check for Qwen models first
@@ -351,6 +361,93 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
     
     # --- Find Hard Question Subset ---
     try:
+        # Identify questions that most models (>80%) got wrong
+        if caption_pass_counts and caption_appearance_counts:
+            # Calculate the passing rate for each caption
+            caption_pass_rates = {}
+            hard_captions = []
+            
+            for caption, appearances in caption_appearance_counts.items():
+                passes = caption_pass_counts.get(caption, 0)
+                pass_rate = passes / appearances if appearances > 0 else 0
+                caption_pass_rates[caption] = pass_rate
+            
+            # Create a list of (caption, pass_rate, appearances) tuples
+            caption_data = [(caption, caption_pass_rates[caption], caption_appearance_counts[caption]) 
+                          for caption in caption_pass_rates.keys()]
+            
+            # Filter to only include captions attempted by at least 3 models
+            eligible_captions = [item for item in caption_data if item[2] >= 3]
+            
+            # Sort by pass rate (ascending) and take the top 100
+            eligible_captions.sort(key=lambda x: x[1])
+            hard_captions = [item[0] for item in eligible_captions[:100]]
+            
+            if hard_captions:
+                print(f"\nSelected the 100 hardest questions (lowest pass rates, at least 3 attempts)")
+            else:
+                print("\nNo hard questions found with at least 3 attempts.")
+                
+            # Evaluate each model's performance on the hard subset
+            if hard_captions and all_data_frames:
+                print("\n--- Model Performance on Hard Subset ---")
+                
+                hard_subset_results = []
+                
+                for df in all_data_frames:
+                    # Extract model identifier
+                    if 'explainer_model' in df.columns and len(df['explainer_model'].unique()) == 1:
+                        model_name = df['explainer_model'].iloc[0]
+                    elif 'source_file' in df.columns and len(df['source_file'].unique()) == 1:
+                        # Extract model name from filename if available
+                        filename = df['source_file'].iloc[0]
+                        match = re.search(r'exp-(.*?)_ag', filename)
+                        model_name = match.group(1).replace('_', '-') if match else "unknown"
+                    else:
+                        model_name = "unknown"
+                        
+                    # Get display name based on model nicknames
+                    display_name = MODEL_NICKNAMES.get(model_name, model_name)
+                    
+                    # Filter dataframe to only include hard captions
+                    hard_df = df[df['caption'].isin(hard_captions)]
+                    
+                    if not hard_df.empty:
+                        # Calculate pass rate on hard subset
+                        total_hard = len(hard_df)
+                        passed_hard = sum(hard_df['autograder_judgment'] == 'PASS')
+                        hard_pass_rate = passed_hard / total_hard if total_hard > 0 else 0
+                        
+                        # Calculate regular pass rate for comparison
+                        total_all = len(df)
+                        passed_all = sum(df['autograder_judgment'] == 'PASS')
+                        all_pass_rate = passed_all / total_all if total_all > 0 else 0
+                        
+                        # Store results
+                        hard_subset_results.append({
+                            'model': model_name,
+                            'display_name': display_name,
+                            'hard_pass_rate': hard_pass_rate,
+                            'overall_pass_rate': all_pass_rate,
+                            'hard_questions_attempted': total_hard,
+                            'hard_questions_passed': passed_hard
+                        })
+                        
+                        # Print result
+                        print(f"  {display_name}: {passed_hard}/{total_hard} hard questions passed ({hard_pass_rate:.2%})")
+                
+                if hard_subset_results:
+                    # Convert results to DataFrame
+                    hard_perf_df = pd.DataFrame(hard_subset_results)
+                    
+                    # Sort by pass rate on hard subset (descending)
+                    hard_perf_df = hard_perf_df.sort_values('hard_pass_rate', ascending=False)
+                    
+                    # Save to CSV
+                    hard_perf_path = os.path.join(run_output_dir, "model_performance_on_hard_subset.csv")
+                    hard_perf_df.to_csv(hard_perf_path, index=False)
+                    print(f"\nSaved model performance on hard subset to: {hard_perf_path}")
+        
         # --- Load category data and create subsets ---
         if all_data_frames:
             # First, combine all dataframes to create category subsets later
@@ -502,7 +599,17 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
                 # HTML label for plot hover/text with newline and grey styling
                 html_label = f"{base_nickname}<br><span style='color:grey;'>Thinking budget: {budget_str}</span>"
 
-        # 3. Check for Qwen Plus 2025-04-28 models with reasoning value
+        # 3. Check for Gemini models with thinking budget
+        elif ("gemini" in model_name.lower()) and "thinking_budget" in filename:
+            budget_match = re.search(r'thinking_budget_(\d+k?)', filename)
+            if budget_match:
+                budget_str = budget_match.group(1)
+                # Simplified plain name for UI/dropdown
+                plain_name = f"{base_nickname} {budget_str}"
+                # HTML label for plot hover/text with newline and grey styling
+                html_label = f"{base_nickname}<br><span style='color:grey;'>Thinking budget: {budget_str}</span>"
+
+        # 4. Check for Qwen Plus 2025-04-28 models with reasoning value
         elif model_name == "qwen-plus-2025-04-28" and "reasoning" in filename:
             reasoning_match = re.search(r'reasoning_(\d+)', filename)
             if reasoning_match:
@@ -542,6 +649,112 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
     run_output_dir = os.path.join(BASE_ANALYSIS_DIR, RUNS_SUBDIR, f"full benchmark")
     os.makedirs(run_output_dir, exist_ok=True)
     print(f"Created analysis run directory: {run_output_dir}")
+    
+    # Save the hard subset to a CSV file if we identified any hard captions
+    if 'hard_captions' in locals() and hard_captions:
+        try:
+            # Read the original comprehensive annotations file to keep its structure
+            annotations_path = "../comprehensive_annotations.csv"
+            if os.path.exists(annotations_path):
+                annotations_df = pd.read_csv(annotations_path)
+                
+                # Filter for only hard captions
+                hard_subset_df = annotations_df[annotations_df['caption'].isin(hard_captions)]
+                
+                # Add pass rate information
+                hard_subset_df['pass_rate'] = hard_subset_df['caption'].map(
+                    lambda caption: caption_pass_rates.get(caption, 0)
+                )
+                hard_subset_df['num_attempts'] = hard_subset_df['caption'].map(
+                    lambda caption: caption_appearance_counts.get(caption, 0)
+                )
+                
+                # Sort by pass rate in ascending order
+                hard_subset_df = hard_subset_df.sort_values('pass_rate', ascending=True)
+                
+                # Save to file
+                hard_subset_path = os.path.join(run_output_dir, "hard_subset.csv")
+                hard_subset_df.to_csv(hard_subset_path, index=False)
+                print(f"Saved hard subset ({len(hard_subset_df)} rows) to: {hard_subset_path}")
+                
+                # Now analyze category representation in the hard subset
+                if 'category_data' in locals() and category_data:
+                    print("\n--- Category Analysis of Hard Subset ---")
+                    
+                    # Create a mapping from idx to caption for easier lookup
+                    idx_to_caption = {row['idx']: row['caption'] for _, row in annotations_df.iterrows() if not pd.isna(row['idx'])}
+                    
+                    # Count total number of items per category across all data
+                    total_items_per_category = {cat: len(idx_set) for cat, idx_set in category_data.items()}
+                    
+                    # Count total number of unique items in all categories
+                    total_dataset_size = len(annotations_df)
+                    
+                    # Print overall category distribution first
+                    print("\nOverall Category Distribution in Full Dataset:")
+                    for category_name, idx_set in category_data.items():
+                        total_in_category = total_items_per_category[category_name]
+                        percent_of_total = total_in_category / total_dataset_size * 100
+                        print(f"  {category_name}: {total_in_category}/{total_dataset_size} items ({percent_of_total:.1f}%)")
+                    
+                    print("\nHard Subset Category Distribution:")
+                    
+                    # Count how many items from each category are in the hard subset
+                    hard_subset_by_category = {}
+                    hard_subset_idx = hard_subset_df['idx'].tolist()
+                    
+                    for category_name, idx_set in category_data.items():
+                        # Find the intersection of hard subset indices and category indices
+                        category_hard_items = set(hard_subset_idx).intersection(idx_set)
+                        hard_subset_by_category[category_name] = len(category_hard_items)
+                        
+                        # Calculate and report the percentage of this category in hard subset vs. overall
+                        total_in_category = total_items_per_category[category_name]
+                        if total_in_category > 0:
+                            hard_pct = len(category_hard_items) / total_in_category * 100
+                            representation = len(category_hard_items) / len(hard_subset_idx) * 100
+                            
+                            print(f"Category: {category_name}")
+                            print(f"  {len(category_hard_items)}/{total_in_category} ({hard_pct:.1f}%) items in this category are in the hard subset")
+                            print(f"  {representation:.1f}% of the hard subset consists of this category")
+                            
+                            # Determine if over/under-represented
+                            overall_pct = total_in_category / total_dataset_size * 100
+                            print(f"  Base presence in full dataset: {overall_pct:.1f}% vs {representation:.1f}% in hard subset")
+                            
+                            if representation > (overall_pct * 1.2):  # 20% higher than expected
+                                print(f"  ⚠️ OVER-REPRESENTED: This category appears more frequently in hard subset than overall")
+                            elif representation < (overall_pct * 0.8):  # 20% lower than expected
+                                print(f"  ⚠️ UNDER-REPRESENTED: This category appears less frequently in hard subset than overall")
+                            
+                    # Add category flags to the hard subset CSV
+                    hard_subset_with_categories = hard_subset_df.copy()
+                    
+                    # Add category columns
+                    for category_name in category_data.keys():
+                        hard_subset_with_categories[f"is_{category_name}"] = hard_subset_with_categories['idx'].apply(
+                            lambda idx: idx in category_data[category_name]
+                        )
+                    
+                    # Add pass rate information to the enhanced version as well
+                    hard_subset_with_categories['pass_rate'] = hard_subset_with_categories['caption'].map(
+                        lambda caption: caption_pass_rates.get(caption, 0)
+                    )
+                    hard_subset_with_categories['num_attempts'] = hard_subset_with_categories['caption'].map(
+                        lambda caption: caption_appearance_counts.get(caption, 0)
+                    )
+                    
+                    # Sort by pass rate in ascending order
+                    hard_subset_with_categories = hard_subset_with_categories.sort_values('pass_rate', ascending=True)
+                    
+                    # Save enhanced version with category flags
+                    enhanced_path = os.path.join(run_output_dir, "hard_subset_with_categories.csv")
+                    hard_subset_with_categories.to_csv(enhanced_path, index=False)
+                    print(f"\nSaved enhanced hard subset with category flags to: {enhanced_path}")
+        except Exception as e:
+            print(f"Error saving or analyzing hard subset: {e}")
+            import traceback
+            traceback.print_exc()
 
     # --- Save Processed Data as JSON ---
     # 1. First copy only the columns that definitely exist
@@ -578,12 +791,29 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
             if model_name in gpqa_data:
                 plot_data_df.at[i, 'gpqa_score'] = gpqa_data[model_name].get('score', None)
             else:
-                # Try with a more flexible matching approach
+                # Try with a more precise matching approach
                 for gpqa_model in gpqa_data:
                     # Convert both to lowercase and remove common separators for comparison
                     clean_gpqa_model = gpqa_model.lower().replace('-', '').replace('_', '').replace(' ', '')
                     clean_model_name = model_name.lower().replace('-', '').replace('_', '').replace(' ', '')
-                    if clean_model_name in clean_gpqa_model or clean_gpqa_model in clean_model_name:
+                    
+                    # Exact match - preferred
+                    if clean_model_name == clean_gpqa_model:
+                        plot_data_df.at[i, 'gpqa_score'] = gpqa_data[gpqa_model].get('score', None)
+                        break
+                        
+                    # For models like "o3" vs "o3-mini", ensure we don't match substrings 
+                    # unless they are the complete model name (preventing o3 matching o3-mini)
+                    if (clean_gpqa_model in clean_model_name and 
+                        (len(clean_gpqa_model) == len(clean_model_name) or 
+                         not any(c.isalnum() for c in clean_model_name[len(clean_gpqa_model):]))):
+                        plot_data_df.at[i, 'gpqa_score'] = gpqa_data[gpqa_model].get('score', None)
+                        break
+                    
+                    # Similar logic for reverse case
+                    if (clean_model_name in clean_gpqa_model and 
+                        (len(clean_model_name) == len(clean_gpqa_model) or 
+                         not any(c.isalnum() for c in clean_gpqa_model[len(clean_model_name):]))):
                         plot_data_df.at[i, 'gpqa_score'] = gpqa_data[gpqa_model].get('score', None)
                         break
         
@@ -611,12 +841,29 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
             if model_name in arc_agi_data:
                 plot_data_df.at[i, 'arc_agi_score'] = arc_agi_data[model_name].get('score', None)
             else:
-                # Try with a more flexible matching approach
+                # Try with a more precise matching approach
                 for arc_model in arc_agi_data:
                     # Convert both to lowercase and remove common separators for comparison
                     clean_arc_model = arc_model.lower().replace('-', '').replace('_', '').replace(' ', '')
                     clean_model_name = model_name.lower().replace('-', '').replace('_', '').replace(' ', '')
-                    if clean_model_name in clean_arc_model or clean_arc_model in clean_model_name:
+                    
+                    # Exact match - preferred
+                    if clean_model_name == clean_arc_model:
+                        plot_data_df.at[i, 'arc_agi_score'] = arc_agi_data[arc_model].get('score', None)
+                        break
+                        
+                    # For models like "o3" vs "o3-mini", ensure we don't match substrings 
+                    # unless they are the complete model name (preventing o3 matching o3-mini)
+                    if (clean_arc_model in clean_model_name and 
+                        (len(clean_arc_model) == len(clean_model_name) or 
+                         not any(c.isalnum() for c in clean_model_name[len(clean_arc_model):]))):
+                        plot_data_df.at[i, 'arc_agi_score'] = arc_agi_data[arc_model].get('score', None)
+                        break
+                    
+                    # Similar logic for reverse case
+                    if (clean_model_name in clean_arc_model and 
+                        (len(clean_model_name) == len(clean_arc_model) or 
+                         not any(c.isalnum() for c in clean_arc_model[len(clean_model_name):]))):
                         plot_data_df.at[i, 'arc_agi_score'] = arc_agi_data[arc_model].get('score', None)
                         break
         
@@ -644,12 +891,29 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
             if model_name in lmarena_data:
                 plot_data_df.at[i, 'lmarena_elo_score'] = lmarena_data[model_name].get('score', None)
             else:
-                # Try with a more flexible matching approach
+                # Try with a more precise matching approach
                 for arena_model in lmarena_data:
                     # Convert both to lowercase and remove common separators for comparison
                     clean_arena_model = arena_model.lower().replace('-', '').replace('_', '').replace(' ', '')
                     clean_model_name = model_name.lower().replace('-', '').replace('_', '').replace(' ', '')
-                    if clean_model_name in clean_arena_model or clean_arena_model in clean_model_name:
+                    
+                    # Exact match - preferred
+                    if clean_model_name == clean_arena_model:
+                        plot_data_df.at[i, 'lmarena_elo_score'] = lmarena_data[arena_model].get('score', None)
+                        break
+                        
+                    # For models like "o3" vs "o3-mini", ensure we don't match substrings 
+                    # unless they are the complete model name (preventing o3 matching o3-mini)
+                    if (clean_arena_model in clean_model_name and 
+                        (len(clean_arena_model) == len(clean_model_name) or 
+                         not any(c.isalnum() for c in clean_model_name[len(clean_arena_model):]))):
+                        plot_data_df.at[i, 'lmarena_elo_score'] = lmarena_data[arena_model].get('score', None)
+                        break
+                    
+                    # Similar logic for reverse case
+                    if (clean_model_name in clean_arena_model and 
+                        (len(clean_model_name) == len(clean_arena_model) or 
+                         not any(c.isalnum() for c in clean_arena_model[len(clean_model_name):]))):
                         plot_data_df.at[i, 'lmarena_elo_score'] = lmarena_data[arena_model].get('score', None)
                         break
         
@@ -678,11 +942,22 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
         print(f"Error saving data to JSON: {e}")
         return # Cannot proceed without data
 
+    # --- Calculate and print benchmark correlations (add this section) ---
+    try:
+        # Calculate correlations with the main HumorBench metric (pass_rate_per_row) only
+        calculate_benchmark_correlations(plot_data_df, "pass_rate_per_row")
+    except Exception as e:
+        print(f"Error calculating benchmark correlations: {e}")
+        import traceback
+        traceback.print_exc()
+
     # --- Generate reports based on options ---
     if paper_plots:
         print("\nGenerating paper-ready plots only...")
         # Generate Static Scatter Plots for Academic Paper
         generate_static_scatter_plots(run_output_dir, data_json_path)
+        # Create combined benchmark plots image
+        create_combined_benchmark_plots(run_output_dir)
     else:
         # Generate Interactive HTML Report
         create_interactive_report(run_output_dir, data_json_path, report_autograder)
@@ -690,108 +965,9 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
         # Generate Static Scatter Plots for Academic Paper
         generate_static_scatter_plots(run_output_dir, data_json_path)
         
-        # Generate Static Bar Chart
-        try:
-            print("Generating static bar chart...")
-            plt.figure(figsize=(14, 8)) # Adjusted size for potentially many labels
+        # Create combined benchmark plots image
+        create_combined_benchmark_plots(run_output_dir)
 
-            # Sort data for the bar chart
-            chart_df = summary_df.copy()
-
-            def extract_experiment_sort_key(display_name_series):
-                display_name = str(display_name_series) # Ensure it's a string
-                # Try Claude thinking budget first (e.g., "Claude 3.7 Sonnet 1024")
-                claude_match = re.search(r'Claude.*?Sonnet\s+(\d+k?)', display_name)
-                if claude_match:
-                    val_str = claude_match.group(1)
-                    if 'k' in val_str.lower(): 
-                        return int(val_str.lower().replace('k', '')) 
-                    return int(val_str)
-
-                # Try Qwen reasoning value (e.g., "Qwen Plus 04-28 Reasoning 50")
-                qwen_match = re.search(r"Qwen Plus 04-28 Reasoning (\d+)", display_name) # Made Qwen match more specific
-                if qwen_match:
-                    return int(qwen_match.group(1))
-                
-                # Check for base models to assign a sort key of 0
-                if display_name == MODEL_NICKNAMES.get("claude-3-7-sonnet-latest"): # Base Claude Sonnet
-                    return 0
-                if display_name == MODEL_NICKNAMES.get("qwen-plus-2025-04-28"):      # Base Qwen Plus 04-28
-                    return 0
-                
-                return None # For other models without a specific numeric experiment value or known base name
-
-            chart_df['experiment_sort_key'] = chart_df['display_name'].apply(extract_experiment_sort_key)
-            
-            # Separate models with and without experiment keys for clearer sorting
-            models_with_key = chart_df[chart_df['experiment_sort_key'].notna()].copy()
-            models_without_key = chart_df[chart_df['experiment_sort_key'].isna()].copy()
-            
-            # Ensure experiment_sort_key is numeric for proper sorting in models_with_key
-            if not models_with_key.empty:
-                models_with_key['experiment_sort_key'] = pd.to_numeric(models_with_key['experiment_sort_key'])
-                
-            models_with_key.sort_values(by=['experiment_sort_key', 'display_name'], ascending=[True, True], inplace=True)
-            models_without_key.sort_values(by=['display_name'], ascending=[True], inplace=True)
-            
-            chart_df = pd.concat([models_with_key, models_without_key], ignore_index=True)
-            
-            # Ensure 'pass_rate_per_row' is numeric
-            chart_df['pass_rate_per_row'] = pd.to_numeric(chart_df['pass_rate_per_row'], errors='coerce')
-            chart_df.dropna(subset=['pass_rate_per_row'], inplace=True)
-
-            bars = plt.bar(chart_df['experiment_sort_key'], chart_df['pass_rate_per_row'] * 100, color=chart_df['plot_color'])
-
-            plt.xlabel("Thinking budget", fontsize=22)
-            plt.ylabel("Pass Rate (Per Row) (%)", fontsize=22)
-            plt.xticks(rotation=45, ha="right", fontsize=16) # Rotate labels to prevent overlap
-            
-            # Rescale Y-axis
-            pass_rates_percent = chart_df['pass_rate_per_row'].dropna() * 100
-            if not pass_rates_percent.empty:
-                min_rate = pass_rates_percent.min()
-                max_rate = pass_rates_percent.max()
-                
-                y_axis_min = min_rate * 0.95
-                y_axis_max = max_rate * 1.05
-                
-                y_axis_min = max(0, y_axis_min) # Ensure min is not less than 0
-                y_axis_max = min(105, y_axis_max) # Ensure max is not excessively over 100
-                
-                # If min and max are very close, add some padding
-                if abs(y_axis_max - y_axis_min) < 5: # e.g. less than 5 percentage points range
-                    y_axis_min = max(0, y_axis_min - 2.5)
-                    y_axis_max = min(105, y_axis_max + 2.5)
-
-                plt.ylim(y_axis_min, y_axis_max)
-                
-                # Adjust y-ticks based on new scale
-                # Generate around 10 ticks within this new range
-                tick_values = np.linspace(y_axis_min, y_axis_max, num=11)
-                plt.yticks(tick_values, fontsize=16)
-                
-                # Format y-ticks as percentages
-                ax = plt.gca()
-                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
-            else:
-                plt.yticks(np.arange(0, 101, 10), fontsize=16) # Fallback if no data
-
-            plt.grid(axis='y', linestyle='--', alpha=0.7)
-            
-            # Add value labels on top of bars
-            for bar in bars:
-                yval = bar.get_height()
-                if pd.notnull(yval):
-                     plt.text(bar.get_x() + bar.get_width()/2.0, yval + 0.5, f'{yval:.1f}%', ha='center', va='bottom', fontsize=15)
-
-            plt.tight_layout() # Adjust layout to make room for labels
-
-            bar_chart_path = os.path.join(run_output_dir, "pass_rate_bar_chart.png")
-            plt.savefig(bar_chart_path)
-            print(f"Saved static bar chart to: {bar_chart_path}")
-            plt.close() # Close the plot to free memory
-        except Exception as e:
-            print(f"Error generating or saving static bar chart: {e}")
 
     # --- Generate Histogram of Explainer Output Tokens if only one run file --- (NEW SECTION)
     if len(run_files) == 1 and all_data_frames:
@@ -889,9 +1065,88 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
 
     # --- Add after analyze_benchmark_results function, before if __name__ == "__main__" ---
 
+def create_combined_benchmark_plots(run_output_dir):
+    """Creates a single image with all three benchmark plots in a row."""
+    try:
+        print("\nCreating combined benchmark plots image...")
+        
+        # Only include the 3 benchmark plots (exclude cost plot)
+        expected_filenames = [
+            "full_bench_gpqa.png",       # GPQA plot
+            "full_bench_arc.png",        # ARC-AGI plot
+            "full_bench_lmarena.png"     # LM Arena ELO plot
+        ]
+        
+        plot_files = []
+        for filename in expected_filenames:
+            filepath = os.path.join(run_output_dir, filename)
+            if os.path.exists(filepath):
+                plot_files.append(filepath)
+                print(f"Found plot file: {filename}")
+        
+        if not plot_files:
+            print("Error: Could not find any benchmark plot images")
+            return
+        
+        print(f"Found {len(plot_files)} plot files to combine")
+        
+        # Create figure with subplots in a row - make it very wide
+        # Adjust width based on number of plots
+        width_per_plot = 8  # inches per plot
+        fig_width = max(width_per_plot * len(plot_files), 20)  # minimum 20 inches
+        fig, axes = plt.subplots(1, len(plot_files), figsize=(fig_width, 8))
+        
+        # If only one plot was found, convert axes to list for consistent handling
+        if len(plot_files) == 1:
+            axes = [axes]
+        
+        # Load and display each plot in its subplot
+        for i, plot_path in enumerate(plot_files):
+            try:
+                img = plt.imread(plot_path)
+                axes[i].imshow(img)
+                axes[i].axis('off')  # Hide axes
+                
+                # Add plot type as title
+                basename = os.path.basename(plot_path)
+                if "gpqa" in basename:
+                    axes[i].set_title("GPQA vs. Performance", fontsize=22)
+                elif "arc" in basename:
+                    axes[i].set_title("ARC-AGI vs. Performance", fontsize=22)
+                elif "lmarena" in basename:
+                    axes[i].set_title("LM Arena ELO vs. Performance", fontsize=22)
+            except Exception as e:
+                print(f"Error loading plot {plot_path}: {e}")
+                # Show error message in this subplot
+                axes[i].text(0.5, 0.5, f"Error loading image", 
+                           ha='center', va='center', fontsize=16)
+                axes[i].axis('on')
+
+        # Remove extra spacing between subplots and add overall title
+        plt.subplots_adjust(wspace=0.05)
+        plt.suptitle("HumorBench vs. Reference Benchmarks", fontsize=24, y=0.98)
+        plt.tight_layout(rect=[0, 0, 1, 0.96])  # Make room for suptitle
+        
+        # Save the combined figure with a different name to avoid overwriting
+        combined_path = os.path.join(run_output_dir, "combined_benchmark_comparisons.png")
+        plt.savefig(combined_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"Saved combined benchmark plots to: {combined_path}")
+        
+    except Exception as e:
+        print(f"Error creating combined benchmark plots: {e}")
+        import traceback
+        traceback.print_exc()
+
+
 def generate_static_scatter_plots(run_output_dir, data_json_path):
     """Generates high-quality static scatter plots for academic papers with accessibility features."""
     print("\nGenerating static scatter plots for academic papers...")
+    
+    # Import necessary libraries for broken axis
+    from matplotlib import gridspec
+    import matplotlib.pyplot as plt
     
     # Load data from JSON
     try:
@@ -940,7 +1195,7 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     # Offsets for the cost plot (these are the existing values)
     cost_offsets = {
         "DeepSeek R1": (15, -20),
-        "Grok 3": (5, -25),
+        "Grok 3": (-25, -25),
         "o4-mini": (-85, 0),
         "Claude 3.7 Sonnet": (10, 10),
         "gpt-4o": (5, -20),
@@ -948,19 +1203,21 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
         "o3": (10, -5),
         "o1": (-10, 12),
         "o3-mini": (-30, 15),
+        "DeepSeek R1 Zero": (5, -25),
 
     }
     
     # Placeholder offsets for GPQA plot (only one example model set, others at default 0,0)
     gpqa_offsets = {
-        "gpt-4o": (15, 10),
-        "Gemini 2.5 pro": (-80, 15),
-        "Claude 3.7 Sonnet": (-200, 0),
-        "o4-mini": (-80, -25),
+        "gpt-4o": (15, -20),
+        "Gemini 2.5 pro": (-160, 25),
+        "Gemini 1.5 pro": (-60, 10),
+        "Claude 3.7 Sonnet": (-195, 0),
+        "o4-mini": (-90, -5),
         "o1": (-40, -10),
         "o3": (-35, -10),
         "Grok 3": (-80, -20),
-        "DeepSeek R1": (-140, -20),
+        "DeepSeek R1": (-90, -30),
     }
     
     # Placeholder offsets for ARC-AGI plot
@@ -968,12 +1225,16 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
         "gpt-4o": (15, 10),  # Example offset - user will fill in the rest
         "Gemini 2.5 pro": (-100, 15),
         "Claude 3.7 Sonnet": (-90, -30),
-        "o3": (-30, -20)
+        "o3": (-30, -20),
+        "o3-mini": (10, -15)  # Add specific offset for o3-mini
     }
     
     # Placeholder offsets for LM Arena ELO plot
     lmarena_elo_offsets = {
-        "Gemini 2.5 pro": (-130, -30),  # Example offset - user will fill in the rest
+        "Gemini 2.5 pro": (-135, 15),
+        "Gemini 1.5 pro": (-55, 20),
+        "o3": (10, -10),
+        "o1": (-40, -30),
 
     }
     
@@ -987,13 +1248,13 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     
     # Set up figure style for academic paper with bigger text/labels
     plt.rcParams.update({
-        'font.size': 16,             
+        'font.size': 100,             
         'axes.labelsize': 22,        # Increased from 18 to 22
         'axes.titlesize': 24,        # Increased from 20 to 24
-        'xtick.labelsize': 16,       # Increased from 14 to 16
-        'ytick.labelsize': 16,       # Increased from 14 to 16
-        'legend.fontsize': 22,       # Increased from 14 to 22
-        'legend.title_fontsize': 22, # Increased from 16 to 24
+        'xtick.labelsize': 20,       # Increased from 14 to 16
+        'ytick.labelsize': 20,       # Increased from 14 to 16
+        'legend.fontsize': 15,       # Increased from 14 to 22
+        'legend.title_fontsize': 15, # Increased from 16 to 24
         'lines.linewidth': 2.5,      
         'lines.markersize': 12,      
         'lines.markeredgewidth': 2,  
@@ -1034,7 +1295,7 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     if len(y_axis_options) <= 1:
         y_axis_options = [{"field": "pass_rate_per_row", "label": "HumorBench Score (%)"}]
     
-    # Generate plots for each X-axis option using the primary Y-axis (toxic/shocking)
+                # Generate plots for each X-axis option using the primary Y-axis (toxic/shocking)
     for y_option in y_axis_options:
         for x_option in x_axis_options:
             try:
@@ -1045,111 +1306,266 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                     print(f"No data available for {x_option['label']} vs {y_option['label']}. Skipping.")
                     continue
                 
-                # Create figure with appropriate size for academic paper (larger for readability)
-                plt.figure(figsize=(10, 8))
-                
-                # Lists to store annotations for adjustText
-                texts = []
-                
-                # Get the offset dictionary for this x-axis
-                current_offsets = axis_to_offsets.get(x_option["field"], {})
-                
-                # Group by family to apply different markers
-                for family, group in plot_df.groupby('explainer_family'):
-                    # Default values if family is not in our dictionaries
-                    marker = family_markers.get(family, 'o')
-                    color = FAMILY_COLORS.get(family, 'gray')
-                    marker_size = family_marker_sizes.get(family, 180)
-                    line_width = family_marker_linewidths.get(family, 2)
+                # Special handling for ARC-AGI plot with ellipsis in x-axis
+                if x_option["field"] == "arc_agi_score":
+                    # Create a single figure for a simpler broken axis approach
+                    fig, ax = plt.subplots(figsize=(10, 8))
                     
-                    # Plot points with both color and shape coding
-                    plt.scatter(
-                        group[x_option["field"]] * (100 if x_option["field"] in ["gpqa_score", "arc_agi_score"] else 1),
-                        group[y_option["field"]] * 100,  # Convert to percentage
-                        marker=marker,
-                        s=marker_size,  # Use family-specific size
-                        color=color,
-                        edgecolors='black',
-                        linewidths=line_width,  # Use family-specific linewidth
-                        alpha=0.8,
-                        label=family if family == 'XAI' else 'OpenAI' if family == 'openai' else family.replace('_', ' ').title()  # Special format for XAI and OpenAI
-                    )
-                
-                    # Add model names as annotations with larger font
-                    for _, row in group.iterrows():
-                        x_val = row[x_option["field"]] * (100 if x_option["field"] in ["gpqa_score", "arc_agi_score"] else 1)
-                        y_val = row[y_option["field"]] * 100
+                    # Identify high outlier model (o3)
+                    o3_data = plot_df[plot_df['display_name'] == 'o3']
+                    regular_data = plot_df[plot_df['display_name'] != 'o3']
+                    
+                    # Get the offset dictionary for this x-axis
+                    current_offsets = axis_to_offsets.get(x_option["field"], {})
+                    
+                    # Plot all models including o3 (will adjust x-ticks later)
+                    for family, group in plot_df.groupby('explainer_family'):
+                        marker = family_markers.get(family, 'o')
+                        color = FAMILY_COLORS.get(family, 'gray')
+                        marker_size = family_marker_sizes.get(family, 180)
+                        line_width = family_marker_linewidths.get(family, 2)
+                        
+                        # For o3, we'll plot at a special position
+                        if family == 'openai' and 'o3' in group['display_name'].values:
+                            # Split into o3 and non-o3 points
+                            o3_points = group[group['display_name'] == 'o3']
+                            non_o3_points = group[group['display_name'] != 'o3']
+                            
+                            # Plot non-o3 points as normal
+                            if not non_o3_points.empty:
+                                ax.scatter(
+                                    non_o3_points[x_option["field"]] * 100,  # Convert to percentage
+                                    non_o3_points[y_option["field"]] * 100,  # Convert to percentage
+                                    marker=marker,
+                                    s=marker_size,
+                                    color=color,
+                                    edgecolors='black',
+                                    linewidths=line_width,
+                                    alpha=0.8,
+                                    label=family if family == 'XAI' else 'OpenAI' if family == 'openai' else family.replace('_', ' ').title()
+                                )
+                            
+                            # Plot o3 at a special x position (30)
+                            if not o3_points.empty:
+                                # If this is the first OpenAI point, add the label
+                                label = None if not non_o3_points.empty else ('OpenAI' if family == 'openai' else family.replace('_', ' ').title())
+                                
+                                ax.scatter(
+                                    30,  # Fixed position for o3
+                                    o3_points[y_option["field"]].iloc[0] * 100,  # y-value as percentage
+                                    marker=marker,
+                                    s=marker_size,
+                                    color=color,
+                                    edgecolors='black',
+                                    linewidths=line_width,
+                                    alpha=0.8,
+                                    label=label
+                                )
+                        else:
+                            # Plot normal points for other families
+                            ax.scatter(
+                                group[x_option["field"]] * 100,  # Convert to percentage
+                                group[y_option["field"]] * 100,  # Convert to percentage
+                                marker=marker,
+                                s=marker_size,
+                                color=color,
+                                edgecolors='black',
+                                linewidths=line_width,
+                                alpha=0.8,
+                                label=family if family == 'XAI' else 'OpenAI' if family == 'openai' else family.replace('_', ' ').title()
+                            )
+                    
+                    # Add model name annotations
+                    for _, row in regular_data.iterrows():
+                        x_val = row[x_option["field"]] * 100  # Convert to percentage
+                        y_val = row[y_option["field"]] * 100  # Convert to percentage
                         model_name = row['display_name']
                         
-                        # Default offset if not specified for this model in the current plot type
-                        offset_x, offset_y = 7, 7
-                        
-                        # Apply model-specific offset if available for this plot type
+                        offset_x, offset_y = 7, 7  # Default offset
                         if model_name in current_offsets:
                             offset_x, offset_y = current_offsets[model_name]
 
-                        # Apply the offsets
-                        plt.annotate(
+                        ax.annotate(
                             model_name,
                             xy=(x_val, y_val),
                             xytext=(offset_x, offset_y),
                             textcoords='offset points',
-                            fontsize=20,  # Increased from 12 to 16
+                            fontsize=20,
                         )
-                
-                # Set axis labels with larger font
-                plt.xlabel(x_option["label"], fontsize=22)
-                plt.ylabel(y_option["label"], fontsize=22)
-                
-                if x_option["field"] == "explainer_cost":
-                    plot_title = f"HumorBench"
-                # plt.title(plot_title, fontsize=24)
-                
-                # Apply log scale with more tick marks if specified
-                if x_option["log_scale"]:
-                    plt.xscale('log')
-                    plt.xlabel(f"{x_option['label']} (Log Scale)", fontsize=22)
                     
-                    # Add more tick marks for log scale
+                    # Add o3 label separately
+                    if not o3_data.empty:
+                        y_val = o3_data[y_option["field"]].iloc[0] * 100
+                        offset_x, offset_y = 7, 7
+                        if 'o3' in current_offsets:
+                            offset_x, offset_y = current_offsets['o3']
+                        
+                        ax.annotate(
+                            'o3',
+                            xy=(30, y_val),
+                            xytext=(offset_x, offset_y),
+                            textcoords='offset points',
+                            fontsize=20,
+                        )
+                    
+                    # Set axis limits
+                    ax.set_xlim(0, 31)
+                    
+                    # Set custom x-ticks with an ellipsis to show the break
+                    xticks = list(range(0, 16, 5)) + [24]  # Moved o3 placeholder closer (from 30 to 24)
+                    ax.set_xticks(xticks)
+                    
+                    # Create custom labels with ellipsis properly aligned
+                    xlabels = [str(x) for x in xticks[:-1]] + ['75']
+                    
+                    # Add the ellipsis as part of the x-axis label
+                    # Position it halfway between the plot area and the next tick
+                    ax.set_xticklabels(xlabels)
+                    
+                    # Add ellipsis as a tick - position it closer to the regular points
+                    ellipsis_pos = xticks[-2] + 5  # Just 5 units after the last regular tick (15)
+                    ax.set_xticks(list(ax.get_xticks()) + [ellipsis_pos])  # Add the ellipsis position
+                    
+                    # Get the tick labels, and replace the ellipsis position with "..."
+                    labels = [item.get_text() for item in ax.get_xticklabels()]
+                    labels[-1] = "..."  # Replace the last added tick (the ellipsis position)
+                    
+                    # Apply the updated labels
+                    ax.set_xticklabels(labels)
+                    
+                    # Add grid for readability
+                    ax.grid(True, linestyle='--', alpha=0.7)
+                    
+                    # Add axis labels
+                    ax.set_xlabel(x_option["label"], fontsize=22)
+                    ax.set_ylabel(y_option["label"], fontsize=22)
+                    
+                    # Add legend in bottom right corner
+                    handles, labels = ax.get_legend_handles_labels()
+                    by_label = dict(zip(labels, handles))
+                    legend = ax.legend(by_label.values(), by_label.keys(), 
+                                      title="Model Family", title_fontsize=16,
+                                      loc='lower right', frameon=True, framealpha=0.9)
+                    legend.get_frame().set_linewidth(2)
+                    
+                    # Adjust layout
+                    plt.tight_layout()
+                    
+                    # Save figure
+                    filename = f"full_bench_{x_option['field'].split('_')[0]}.png"
+                    filepath = os.path.join(run_output_dir, filename)
+                    plt.savefig(filepath, dpi=300, bbox_inches='tight')
+                    plt.close()
+                    
+                    print(f"Saved simplified ARC-AGI plot with ellipsis to: {filepath}")
+                
+                # Regular handling for other plots
+                else:
+                    # Create figure with appropriate size for academic paper
+                    plt.figure(figsize=(10, 8))
+                    
+                    # Lists to store annotations for adjustText
+                    texts = []
+                    
+                    # Get the offset dictionary for this x-axis
+                    current_offsets = axis_to_offsets.get(x_option["field"], {})
+                    
+                    # Group by family to apply different markers
+                    for family, group in plot_df.groupby('explainer_family'):
+                        # Default values if family is not in our dictionaries
+                        marker = family_markers.get(family, 'o')
+                        color = FAMILY_COLORS.get(family, 'gray')
+                        marker_size = family_marker_sizes.get(family, 180)
+                        line_width = family_marker_linewidths.get(family, 2)
+                        
+                        # Plot points with both color and shape coding
+                        plt.scatter(
+                            group[x_option["field"]] * (100 if x_option["field"] in ["gpqa_score", "arc_agi_score"] else 1),
+                            group[y_option["field"]] * 100,  # Convert to percentage
+                            marker=marker,
+                            s=marker_size,  # Use family-specific size
+                            color=color,
+                            edgecolors='black',
+                            linewidths=line_width,  # Use family-specific linewidth
+                            alpha=0.8,
+                            label=family if family == 'XAI' else 'OpenAI' if family == 'openai' else family.replace('_', ' ').title()  # Special format for XAI and OpenAI
+                        )
+                    
+                        # Add model names as annotations with larger font
+                        for _, row in group.iterrows():
+                            x_val = row[x_option["field"]] * (100 if x_option["field"] in ["gpqa_score", "arc_agi_score"] else 1)
+                            y_val = row[y_option["field"]] * 100
+                            model_name = row['display_name']
+                            
+                            # Default offset if not specified for this model in the current plot type
+                            offset_x, offset_y = 7, 7
+                            
+                            # Apply model-specific offset if available for this plot type
+                            if model_name in current_offsets:
+                                offset_x, offset_y = current_offsets[model_name]
+
+                            # Apply the offsets
+                            plt.annotate(
+                                model_name,
+                                xy=(x_val, y_val),
+                                xytext=(offset_x, offset_y),
+                                textcoords='offset points',
+                                fontsize=20,  # Increased from 12 to 16
+                            )
+                    
+                    # Set axis labels with larger font
+                    plt.xlabel(x_option["label"], fontsize=22)
+                    plt.ylabel(y_option["label"], fontsize=22)
+                    
                     if x_option["field"] == "explainer_cost":
-                        # Define exact positions for log scale ticks
-                        major_ticks = [0.5, 1, 2, 5, 10, 20]
-                        plt.xticks(major_ticks)
+                        plot_title = f"HumorBench"
+                    # plt.title(plot_title, fontsize=24)
+                    
+                    # Apply log scale with more tick marks if specified
+                    if x_option["log_scale"]:
+                        plt.xscale('log')
+                        plt.xlabel(f"{x_option['label']} (Log Scale)", fontsize=22)
                         
-                        # Format tick labels
-                        ax = plt.gca()
-                        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'${x:.1f}' if x < 1 else f'${int(x)}'))
+                        # Add more tick marks for log scale
+                        if x_option["field"] == "explainer_cost":
+                            # Define exact positions for log scale ticks
+                            major_ticks = [0.5, 1, 2, 5, 10, 20]
+                            plt.xticks(major_ticks)
+                            
+                            # Format tick labels
+                            ax = plt.gca()
+                            ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'${x:.1f}' if x < 1 else f'${int(x)}'))
+                            
+                            # Add minor ticks
+                            import matplotlib.ticker as ticker
+                            ax.xaxis.set_minor_locator(ticker.LogLocator(subs=np.arange(0.1, 1.0, 0.1), numticks=20))
+                    
+                    # Add grid for better readability
+                    plt.grid(True, linestyle='--', alpha=0.7)
+                    
+                    # Add legend showing both color and shape for each family
+                    legend_position = 'lower right'  # Consistently use lower right for standard plots
+                    legend = plt.legend(title="Model Family", title_fontsize=16, 
+                                      loc=legend_position, frameon=True, framealpha=0.9)
+                    legend.get_frame().set_linewidth(2)
+                    
+                    # Adjust layout
+                    plt.tight_layout()
+                    
+                    # Create different filenames for each plot type
+                    if x_option["field"] == "explainer_cost":
+                        plot_type = "cost"
+                    else:
+                        plot_type = x_option["field"].split("_")[0]  # Get first part of field name
                         
-                        # Add minor ticks
-                        import matplotlib.ticker as ticker
-                        ax.xaxis.set_minor_locator(ticker.LogLocator(subs=np.arange(0.1, 1.0, 0.1), numticks=20))
-                
-                # Add grid for better readability
-                plt.grid(True, linestyle='--', alpha=0.7)
-                
-                # Add legend showing both color and shape for each family
-                # Use 'upper left' for GPQA plots, 'lower right' for others
-                legend_position = 'upper left' if x_option["field"] == "gpqa_score" else 'lower right'
-                legend = plt.legend(title="Model Family", title_fontsize=24, 
-                                  loc=legend_position, frameon=True, framealpha=0.9)
-                legend.get_frame().set_linewidth(2)
-                
-                # Adjust layout
-                plt.tight_layout()
-                
-                # Create descriptive filename
-                y_field = y_option["field"].replace("_", "-")
-                x_field = x_option["field"].replace("_", "-")
-                log_suffix = "_log" if x_option["log_scale"] else ""
-                
-                filename = f"{x_field}{log_suffix}.png"
-                filepath = os.path.join(run_output_dir, filename)
-                
-                # Save with high DPI for print quality
-                plt.savefig(filepath, dpi=300, bbox_inches='tight')
-                plt.close()
-                
-                print(f"Saved {y_option['label']} vs {x_option['label']} plot to: {filepath}")
+                    filename = f"full_bench_{plot_type}.png"
+                    filepath = os.path.join(run_output_dir, filename)
+                    
+                    # Save with high DPI for print quality
+                    plt.savefig(filepath, dpi=300, bbox_inches='tight')
+                    plt.close()
+                    
+                    print(f"Saved {y_option['label']} vs {x_option['label']} plot to: {filepath}")
                 
             except Exception as e:
                 print(f"Error generating plot for {x_option['label']} vs {y_option['label']}: {e}")
@@ -1178,14 +1594,14 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
         
         plt.axis('off')  # Hide axes
         # Create legend
-        plt.legend(title="Model Families", title_fontsize=24, fontsize=22,
+        plt.legend(title="Model Families", title_fontsize=16, fontsize=22,
                 loc='center', frameon=True, ncol=2)
         plt.tight_layout()
         
         # Save legend as separate file
-        legend_path = os.path.join(run_output_dir, "paper_plot_legend.png")
-        plt.savefig(legend_path, dpi=300, bbox_inches='tight')
-        plt.close()
+        # legend_path = os.path.join(run_output_dir, "paper_plot_legend.png")
+        # plt.savefig(legend_path, dpi=300, bbox_inches='tight')
+        # plt.close()
         
         print(f"Saved family legend to: {legend_path}")
         
@@ -1195,15 +1611,74 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     print("\nStatic scatter plots generation complete.")
 
 
-if __name__ == "__main__":
-    # Remove argument parsing
-    # No longer need to set VIEW_MODE
+# --- Add a function to calculate benchmark correlations ---
+def calculate_benchmark_correlations(df, y_field="pass_rate_per_row"):
+    """Calculate and print Spearman rank correlations between benchmark metrics.
+    
+    Args:
+        df: DataFrame with benchmark data
+        y_field: The HumorBench metric field to use (default: pass_rate_per_row)
+    """
+    print("\n--- Benchmark Correlation Analysis (Spearman's Rank Correlation) ---")
+    
+    # List of benchmark fields to correlate with HumorBench
+    benchmark_fields = [
+        ("gpqa_score", "GPQA Diamond Score"),
+        ("arc_agi_score", "ARC-AGI Score"),
+        ("lmarena_elo_score", "LM Arena ELO Score")
+    ]
+    
+    # Filter for only benchmarks with data
+    available_benchmarks = [(field, name) for field, name in benchmark_fields 
+                           if field in df.columns and df[field].notna().any()]
+    
+    if not available_benchmarks:
+        print("  No other benchmark data available for correlation analysis.")
+        return
+    
+    # Print header
+    print(f"  Correlating with HumorBench metric: {y_field}")
+    print("  " + "-" * 60)
+    print(f"  {'Benchmark':<25} | {'Correlation':<12} | {'p-value':<12} | {'# Models'}")
+    print("  " + "-" * 60)
+    
+    # Calculate correlations
+    for field, name in available_benchmarks:
+        # Filter rows with valid data for both metrics
+        valid_data = df.dropna(subset=[field, y_field])
+        n_models = len(valid_data)
+        
+        if n_models < 3:
+            print(f"  {name:<25} | {'N/A':<12} | {'N/A':<12} | {n_models} (too few for correlation)")
+            continue
+            
+        # Calculate Spearman correlation
+        corr, p_value = spearmanr(valid_data[field], valid_data[y_field])
+        
+        # Format significance markers
+        sig_marker = ""
+        if p_value < 0.001:
+            sig_marker = "***"
+        elif p_value < 0.01:
+            sig_marker = "**"
+        elif p_value < 0.05:
+            sig_marker = "*"
+            
+        # Print result
+        print(f"  {name:<25} | {corr:.3f}{sig_marker:<9} | {p_value:.3f}{'ᵃ':<9} | {n_models}")
+    
+    # Print footer with significance explanation
+    print("  " + "-" * 60)
+    print("  * p<0.05, ** p<0.01, *** p<0.001, ᵃ p-value precision may be limited for small sample sizes")
+    print("  Note: Spearman's correlation measures monotonic rank associations\n")
 
+
+if __name__ == "__main__":
     # Add argument parsing for paper_plots option
     import argparse
     parser = argparse.ArgumentParser(description="Generate benchmark results")
     parser.add_argument("--paper-plots", action="store_true", 
-                       help="Generate only paper-ready scatter plots without interactive HTML")
+                      help="Generate only paper-ready scatter plots without interactive HTML")
     args = parser.parse_args()
 
     # Run the data generation and report creation
