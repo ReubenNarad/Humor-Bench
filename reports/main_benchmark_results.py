@@ -831,7 +831,7 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
         print("GPQA scores will not be available in the report")
 
     # --- Load ARC-AGI scores ---
-    arc_agi_file_path = "../model_data/models_ARC_AGI.json"
+    arc_agi_file_path = "../model_data/models_ARC_AGI_with_o.json"
     try:
         with open(arc_agi_file_path, 'r') as f:
             arc_agi_data = json.load(f)
@@ -1230,7 +1230,8 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
         "Gemini 2.5 pro": (-100, 15),
         "Claude 3.7 Sonnet": (-90, -30),
         "o3": (-30, -20),
-        "o3-mini": (10, -15)  # Add specific offset for o3-mini
+        "o3-mini": (10, -15),  # Add specific offset for o3-mini
+        "Grok 4": (-60, -25)  # Add offset for Grok 4
     }
     
     # Placeholder offsets for LM Arena ELO plot
@@ -1315,71 +1316,66 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                     # Create a single figure for a simpler broken axis approach
                     fig, ax = plt.subplots(figsize=(10, 8))
                     
-                    # Identify high outlier model (o3)
-                    o3_data = plot_df[plot_df['display_name'] == 'o3']
-                    regular_data = plot_df[plot_df['display_name'] != 'o3']
+                    # Identify high-scoring models (ARC-AGI score > 60%) that should go on the right side
+                    threshold = 0.60  # 60% threshold
+                    high_scoring_data = plot_df[plot_df[x_option["field"]] > threshold]
+                    regular_data = plot_df[plot_df[x_option["field"]] <= threshold]
                     
                     # Get the offset dictionary for this x-axis
                     current_offsets = axis_to_offsets.get(x_option["field"], {})
                     
-                    # Plot all models including o3 (will adjust x-ticks later)
-                    for family, group in plot_df.groupby('explainer_family'):
+                    # Plot regular models (ARC-AGI score <= 60%)
+                    for family, group in regular_data.groupby('explainer_family'):
                         marker = family_markers.get(family, 'o')
                         color = FAMILY_COLORS.get(family, 'gray')
                         marker_size = family_marker_sizes.get(family, 180)
                         line_width = family_marker_linewidths.get(family, 2)
                         
-                        # For o3, we'll plot at a special position
-                        if family == 'openai' and 'o3' in group['display_name'].values:
-                            # Split into o3 and non-o3 points
-                            o3_points = group[group['display_name'] == 'o3']
-                            non_o3_points = group[group['display_name'] != 'o3']
-                            
-                            # Plot non-o3 points as normal
-                            if not non_o3_points.empty:
-                                ax.scatter(
-                                    non_o3_points[x_option["field"]] * 100,  # Convert to percentage
-                                    non_o3_points[y_option["field"]] * 100,  # Convert to percentage
-                                    marker=marker,
-                                    s=marker_size,
-                                    color=color,
-                                    edgecolors='black',
-                                    linewidths=line_width,
-                                    alpha=0.8,
-                                    label=family if family == 'XAI' else 'OpenAI' if family == 'openai' else family.replace('_', ' ').title()
-                                )
-                            
-                            # Plot o3 at a special x position (30)
-                            if not o3_points.empty:
-                                # If this is the first OpenAI point, add the label
-                                label = None if not non_o3_points.empty else ('OpenAI' if family == 'openai' else family.replace('_', ' ').title())
-                                
-                                ax.scatter(
-                                    30,  # Fixed position for o3
-                                    o3_points[y_option["field"]].iloc[0] * 100,  # y-value as percentage
-                                    marker=marker,
-                                    s=marker_size,
-                                    color=color,
-                                    edgecolors='black',
-                                    linewidths=line_width,
-                                    alpha=0.8,
-                                    label=label
-                                )
-                        else:
-                            # Plot normal points for other families
-                            ax.scatter(
-                                group[x_option["field"]] * 100,  # Convert to percentage
-                                group[y_option["field"]] * 100,  # Convert to percentage
-                                marker=marker,
-                                s=marker_size,
-                                color=color,
-                                edgecolors='black',
-                                linewidths=line_width,
-                                alpha=0.8,
-                                label=family if family == 'XAI' else 'OpenAI' if family == 'openai' else family.replace('_', ' ').title()
-                            )
+                        ax.scatter(
+                            group[x_option["field"]] * 100,  # Convert to percentage
+                            group[y_option["field"]] * 100,  # Convert to percentage
+                            marker=marker,
+                            s=marker_size,
+                            color=color,
+                            edgecolors='black',
+                            linewidths=line_width,
+                            alpha=0.8,
+                            label=family if family == 'XAI' else 'OpenAI' if family == 'openai' else family.replace('_', ' ').title()
+                        )
                     
-                    # Add model name annotations
+                    # Plot high-scoring models on the right side of the break
+                    special_x_positions = [42, 47]  # Positions for high-scoring models (sorted by ARC-AGI score)
+                    # Sort high scoring data by ARC-AGI score to match label order
+                    high_scoring_sorted = high_scoring_data.sort_values(x_option["field"])
+                    for i, (_, row) in enumerate(high_scoring_sorted.iterrows()):
+                        family = row['explainer_family']
+                        marker = family_markers.get(family, 'o')
+                        color = FAMILY_COLORS.get(family, 'gray')
+                        marker_size = family_marker_sizes.get(family, 180)
+                        line_width = family_marker_linewidths.get(family, 2)
+                        
+                        # Use a different x position for each high-scoring model
+                        x_pos = special_x_positions[i % len(special_x_positions)]
+                        
+                        # Check if we need to add family label 
+                        family_label = family if family == 'XAI' else 'OpenAI' if family == 'openai' else family.replace('_', ' ').title()
+                        # For simplicity, only label the first high-scoring model in each family
+                        is_first_in_family = i == 0 or high_scoring_sorted.iloc[i-1]['explainer_family'] != family
+                        label = family_label if is_first_in_family else None
+                        
+                        ax.scatter(
+                            x_pos,
+                            row[y_option["field"]] * 100,  # y-value as percentage
+                            marker=marker,
+                            s=marker_size,
+                            color=color,
+                            edgecolors='black',
+                            linewidths=line_width,
+                            alpha=0.8,
+                            label=label
+                        )
+                    
+                    # Add model name annotations for regular models
                     for _, row in regular_data.iterrows():
                         x_val = row[x_option["field"]] * 100  # Convert to percentage
                         y_val = row[y_option["field"]] * 100  # Convert to percentage
@@ -1397,45 +1393,51 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
                             fontsize=20,
                         )
                     
-                    # Add o3 label separately
-                    if not o3_data.empty:
-                        y_val = o3_data[y_option["field"]].iloc[0] * 100
-                        offset_x, offset_y = 7, 7
-                        if 'o3' in current_offsets:
-                            offset_x, offset_y = current_offsets['o3']
+                    # Add annotations for high-scoring models
+                    special_x_positions = [42, 47]  # Same positions as above
+                    # Use the same sorted order as plotting and labels
+                    for i, (_, row) in enumerate(high_scoring_sorted.iterrows()):
+                        model_name = row['display_name']
+                        x_pos = special_x_positions[i % len(special_x_positions)]
+                        y_val = row[y_option["field"]] * 100
+                        
+                        offset_x, offset_y = 7, 7  # Default offset
+                        if model_name in current_offsets:
+                            offset_x, offset_y = current_offsets[model_name]
                         
                         ax.annotate(
-                            'o3',
-                            xy=(30, y_val),
+                            model_name,
+                            xy=(x_pos, y_val),
                             xytext=(offset_x, offset_y),
                             textcoords='offset points',
                             fontsize=20,
                         )
                     
-                    # Set axis limits
-                    ax.set_xlim(0, 31)
+                    # Set axis limits to accommodate both regular and special positions
+                    ax.set_xlim(0, 50)
                     
-                    # Set custom x-ticks with an ellipsis to show the break
-                    xticks = list(range(0, 16, 5)) + [24]  # Moved o3 placeholder closer (from 30 to 24)
-                    ax.set_xticks(xticks)
+                    # Set up clean x-ticks: regular scale from 0-35%, then ellipsis, then high scores
+                    regular_ticks = list(range(0, 36, 5))  # [0, 5, 10, 15, 20, 25, 30, 35]
+                    ellipsis_pos = 38
+                    high_score_ticks = [42, 47]  # Positions for high-scoring models (Grok 4, o3) - more spread out
                     
-                    # Create custom labels with ellipsis properly aligned
-                    xlabels = [str(x) for x in xticks[:-1]] + ['75']
+                    all_ticks = regular_ticks + [ellipsis_pos] + high_score_ticks
+                    ax.set_xticks(all_ticks)
                     
-                    # Add the ellipsis as part of the x-axis label
-                    # Position it halfway between the plot area and the next tick
-                    ax.set_xticklabels(xlabels)
+                    # Create corresponding labels
+                    regular_labels = [str(x) for x in regular_ticks]
                     
-                    # Add ellipsis as a tick - position it closer to the regular points
-                    ellipsis_pos = xticks[-2] + 5  # Just 5 units after the last regular tick (15)
-                    ax.set_xticks(list(ax.get_xticks()) + [ellipsis_pos])  # Add the ellipsis position
+                    # Create dynamic labels based on actual model scores (sorted by ARC-AGI score)
+                    high_score_labels = []
+                    if not high_scoring_data.empty:
+                        # Sort high scoring data by ARC-AGI score to ensure correct order
+                        high_scoring_sorted = high_scoring_data.sort_values(x_option["field"])
+                        for _, row in high_scoring_sorted.iterrows():
+                            score_pct = int(row[x_option["field"]] * 100)  # Convert to integer percentage
+                            high_score_labels.append(str(score_pct))
                     
-                    # Get the tick labels, and replace the ellipsis position with "..."
-                    labels = [item.get_text() for item in ax.get_xticklabels()]
-                    labels[-1] = "..."  # Replace the last added tick (the ellipsis position)
-                    
-                    # Apply the updated labels
-                    ax.set_xticklabels(labels)
+                    all_labels = regular_labels + ["..."] + high_score_labels
+                    ax.set_xticklabels(all_labels)
                     
                     # Add grid for readability
                     ax.grid(True, linestyle='--', alpha=0.7)

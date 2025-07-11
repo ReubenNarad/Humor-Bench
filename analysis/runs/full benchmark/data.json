@@ -110,7 +110,7 @@
         "num_captions": 309,
         "plot_label": "o1",
         "gpqa_score": 0.78,
-        "arc_agi_score": NaN,
+        "arc_agi_score": 0.31,
         "lmarena_elo_score": 1350.0
     },
     {
@@ -224,7 +224,7 @@
         "num_captions": 309,
         "plot_label": "Grok 4",
         "gpqa_score": NaN,
-        "arc_agi_score": NaN,
+        "arc_agi_score": 0.66,
         "lmarena_elo_score": NaN
     }
 ]
