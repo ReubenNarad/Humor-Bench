@@ -1,0 +1,2 @@
+explainer_model,autograder_model,num_examples,pass_rate,total_cost,avg_cost_per_example,source_file,explainer_family,plot_color
+claude-3-7-sonnet-latest,gpt-4o,499,0.8036072144288577,2.6486275,0.005307870741482965,20250409_231147_claude_explainer_vs_gpt4o_grader_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv,anthropic,#e3c771
