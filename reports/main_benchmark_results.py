@@ -29,14 +29,14 @@ RUN_FILES_TO_ANALYZE = [
     "../runs/20250522_173648_claude-4-sonnet_exp-claude_sonnet_4_20250514_ag-gpt_4o.csv",
     "../runs/main/20250512_100811_gemini_2.5_rerun_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o.csv",
     # "../runs/main/20250410_143220_gemini_explainer_vs_gpt4o_grader_exp-gemini_1_5_pro_ag-gpt_4o.csv",
-    # "../runs/main/20250416_102802_llama4_maverick_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Maverick_17B_128E_Instruct_FP8_ag-gpt_4o.csv",
-    # "../runs/main/20250416_111359_qwen_explainer_vs_gpt4o_grader_exp-Qwen_Qwen2_5_72B_Instruct_Turbo_ag-gpt_4o.csv",
+    "../runs/main/20250416_102802_llama4_maverick_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Maverick_17B_128E_Instruct_FP8_ag-gpt_4o.csv",
+    "../runs/main/20250416_111359_qwen_explainer_vs_gpt4o_grader_exp-Qwen_Qwen2_5_72B_Instruct_Turbo_ag-gpt_4o.csv",
     # "../runs/main/20250416_123510_llama4_scout_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Scout_17B_16E_Instruct_ag-gpt_4o.csv",
-    # "../runs/main/20250416_152132_o4-mini_explainer_vs_gpt4o_grader_exp-o4_mini_ag-gpt_4o.csv",
+    "../runs/main/20250416_152132_o4-mini_explainer_vs_gpt4o_grader_exp-o4_mini_ag-gpt_4o.csv",
     "../runs/main/20250416_182853_o3_explainer_vs_gpt4o_grader_exp-o3_ag-gpt_4o.csv",
-    # "../runs/main/20250416_184110_o1_explainer_vs_gpt4o_grader_exp-o1_ag-gpt_4o.csv",
+    "../runs/main/20250416_184110_o1_explainer_vs_gpt4o_grader_exp-o1_ag-gpt_4o.csv",
     # "../runs/main/20250428_145241_deepseek_v3_exp-deepseek_ai_DeepSeek_V3_ag-gpt_4o.csv",
-    # "../runs/main/20250428_151728_deepseek_r1_exp-deepseek_ai_DeepSeek_R1_ag-gpt_4o.csv",
+    "../runs/main/20250428_151728_deepseek_r1_exp-deepseek_ai_DeepSeek_R1_ag-gpt_4o.csv",
     "../runs/main/20250502_222737_grok_3_beta_exp-grok_3_beta_ag-gpt_4o.csv",
     "../runs/main/20250710_095959_grok_4_0709_exp-grok_4_0709_ag-gpt_4o.csv",
     # "../runs/main/20250513_114914_openrouter_deepseek_r1_zero_exp-deepseek_deepseek_r1_zero:free_ag-gpt_4o.csv"
@@ -82,6 +82,7 @@ MODEL_NICKNAMES = {
     "o4-mini": "o4-mini", # Base nickname for o4-mini
     "o3-mini": "o3-mini",
     "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet",  # Updated default Claude nickname
+    "claude-sonnet-4-20250514": "Claude Sonnet 4", # Add nickname for claude-sonnet-4-20250514
     "gemini-2-5-pro-preview-03-25": "Gemini 2.5 pro",
     "gemini-2-5-flash-preview-04-17": "Gemini 2.5 flash",
     "gemini-1-5-pro": "Gemini 1.5 pro",
@@ -94,6 +95,7 @@ MODEL_NICKNAMES = {
     "deepseek-ai-DeepSeek-V3": "DeepSeek V3", # Add nickname for DeepSeek V3
     "deepseek-ai-DeepSeek-R1": "DeepSeek R1", # Add nickname for DeepSeek R1
     "grok-3-beta": "Grok 3", # Add nickname for grok-3-beta
+    "grok-4-0709": "Grok 4", # Add nickname for grok-4-0709
     "deepseek-deepseek-r1-zero:free": "DeepSeek R1 Zero", # Corrected OpenRouter model name with colon
 }
 
@@ -1194,10 +1196,12 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
     # --- Define offsets for model labels based on x-axis ---
     # Offsets for the cost plot (these are the existing values)
     cost_offsets = {
-        "DeepSeek R1": (15, -20),
-        "Grok 3": (-25, -25),
+        "DeepSeek R1": (15, -5),
+        "Grok 3": (-15, -25),
+        "Grok 4": (-70, -25),
         "o4-mini": (-85, 0),
         "Claude 3.7 Sonnet": (10, 10),
+        "Claude Sonnet 4": (5, -25),
         "gpt-4o": (5, -20),
         "Gemini 2.5 pro": (-160, 10),
         "o3": (10, -5),
