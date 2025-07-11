@@ -214,7 +214,7 @@ def calculate_explainer_cost(row, model_prices):
 
 # --- Main Analysis Logic ---
 # Remove view_mode parameter from function definition
-def generate_benchmark_data(run_files, prices_path, paper_plots=False):
+def generate_benchmark_data(run_files, prices_path, paper_plots=False, hard_leaderboard_only=False):
     """Analyzes multiple benchmark runs and generates data for interactive report."""
     run_summaries = []
     autograder_models_found = set()
@@ -362,59 +362,83 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
     summary_df = pd.DataFrame(run_summaries)
     # Sort by a default metric initially, e.g., per_row pass rate
     summary_df = summary_df.sort_values(by='pass_rate_per_row', ascending=True)
+        # --- Create Output Directory EARLY (needed for hard subset analysis) ---
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_output_dir = os.path.join(BASE_ANALYSIS_DIR, RUNS_SUBDIR, f"full benchmark")
+    os.makedirs(run_output_dir, exist_ok=True)
+    print(f"Created analysis run directory: {run_output_dir}")
     
-    # --- Find Hard Question Subset ---
-    try:
-        # Identify questions that most models (>80%) got wrong
-        if caption_pass_counts and caption_appearance_counts:
-            # Calculate the passing rate for each caption
-            caption_pass_rates = {}
-            hard_captions = []
-            
-            for caption, appearances in caption_appearance_counts.items():
-                passes = caption_pass_counts.get(caption, 0)
-                pass_rate = passes / appearances if appearances > 0 else 0
-                caption_pass_rates[caption] = pass_rate
-            
-            # Create a list of (caption, pass_rate, appearances) tuples
-            caption_data = [(caption, caption_pass_rates[caption], caption_appearance_counts[caption]) 
-                          for caption in caption_pass_rates.keys()]
-            
-            # Filter to only include captions attempted by at least 3 models
-            eligible_captions = [item for item in caption_data if item[2] >= 3]
-            
-            # Sort by pass rate (ascending) and take the top 100
-            eligible_captions.sort(key=lambda x: x[1])
-            hard_captions = [item[0] for item in eligible_captions[:100]]
-            
-            if hard_captions:
-                print(f"\nSelected the 100 hardest questions (lowest pass rates, at least 3 attempts)")
-            else:
-                print("\nNo hard questions found with at least 3 attempts.")
+    # --- Find Hard Question Subset (only if hard_leaderboard_only is True) ---
+    if hard_leaderboard_only:
+        try:
+            # Calculate pass rates for individual elements, not captions
+            if all_data_frames:
+                print(f"\nCalculating hard subset from {len(all_data_frames)} model runs...")
                 
-            # Evaluate each model's performance on the hard subset
-            if hard_captions and all_data_frames:
-                print("\n--- Model Performance on Hard Subset ---")
+                # Track pass rates for individual (caption, element) pairs
+                element_pass_counts = {}
+                element_appearance_counts = {}
                 
-                hard_subset_results = []
-                
+                # Count passes and appearances for each individual element
                 for df in all_data_frames:
-                    # Extract model identifier
-                    if 'explainer_model' in df.columns and len(df['explainer_model'].unique()) == 1:
-                        model_name = df['explainer_model'].iloc[0]
-                    elif 'source_file' in df.columns and len(df['source_file'].unique()) == 1:
-                        # Extract model name from filename if available
-                        filename = df['source_file'].iloc[0]
-                        match = re.search(r'exp-(.*?)_ag', filename)
-                        model_name = match.group(1).replace('_', '-') if match else "unknown"
-                    else:
-                        model_name = "unknown"
+                    for _, row in df.iterrows():
+                        element_key = (row['caption'], row['element'])
                         
-                    # Get display name based on model nicknames
-                    display_name = MODEL_NICKNAMES.get(model_name, model_name)
+                        if element_key not in element_pass_counts:
+                            element_pass_counts[element_key] = 0
+                            element_appearance_counts[element_key] = 0
+                            
+                        if row['autograder_judgment'] == 'PASS':
+                            element_pass_counts[element_key] += 1
+                        element_appearance_counts[element_key] += 1
+                
+                # Calculate pass rates for each element
+                element_pass_rates = {}
+                for element_key, appearances in element_appearance_counts.items():
+                    passes = element_pass_counts.get(element_key, 0)
+                    pass_rate = passes / appearances if appearances > 0 else 0
+                    element_pass_rates[element_key] = pass_rate
+                
+                # Create list of (element_key, pass_rate, appearances) tuples
+                element_data = [(element_key, element_pass_rates[element_key], element_appearance_counts[element_key]) 
+                              for element_key in element_pass_rates.keys()]
+                
+                # Filter to only include elements attempted by at least 3 models
+                eligible_elements = [item for item in element_data if item[2] >= 3]
+                
+                # Sort by pass rate (ascending) and take the top 100 individual elements
+                eligible_elements.sort(key=lambda x: x[1])
+                hard_elements = [item[0] for item in eligible_elements[:100]]  # 100 individual elements
+                
+                if hard_elements:
+                    print(f"\nSelected the 100 hardest individual elements (lowest pass rates, at least 3 attempts)")
+                else:
+                    print("\nNo hard elements found with at least 3 attempts.")
+                    return  # Exit early if no hard elements found
+                
+                # Evaluate each model's performance on the hard subset
+                if hard_elements and all_data_frames:
+                    print("\n--- Model Performance on Hard Subset ---")
                     
-                    # Filter dataframe to only include hard captions
-                    hard_df = df[df['caption'].isin(hard_captions)]
+                    hard_subset_results = []
+                    
+                    for df in all_data_frames:
+                        # Extract model identifier
+                        if 'explainer_model' in df.columns and len(df['explainer_model'].unique()) == 1:
+                            model_name = df['explainer_model'].iloc[0]
+                        elif 'source_file' in df.columns and len(df['source_file'].unique()) == 1:
+                            # Extract model name from filename if available
+                            filename = df['source_file'].iloc[0]
+                            match = re.search(r'exp-(.*?)_ag', filename)
+                            model_name = match.group(1).replace('_', '-') if match else "unknown"
+                        else:
+                            model_name = "unknown"
+                            
+                        # Get display name based on model nicknames
+                        display_name = MODEL_NICKNAMES.get(model_name, model_name)
+                        
+                        # Filter dataframe to only include hard elements
+                        hard_df = df[df.apply(lambda row: (row['caption'], row['element']) in hard_elements, axis=1)]
                     
                     if not hard_df.empty:
                         # Calculate pass rate on hard subset
@@ -447,12 +471,72 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
                     # Sort by pass rate on hard subset (descending)
                     hard_perf_df = hard_perf_df.sort_values('hard_pass_rate', ascending=False)
                     
-                    # Save to CSV
-                    hard_perf_path = os.path.join(run_output_dir, "model_performance_on_hard_subset.csv")
-                    hard_perf_df.to_csv(hard_perf_path, index=False)
-                    print(f"\nSaved model performance on hard subset to: {hard_perf_path}")
-        
-        # --- Load category data and create subsets ---
+                                    # Save to CSV
+                hard_perf_path = os.path.join(run_output_dir, "model_performance_on_hard_subset.csv")
+                hard_perf_df.to_csv(hard_perf_path, index=False)
+                print(f"\nSaved model performance on hard subset to: {hard_perf_path}")
+                
+                # Create a clean leaderboard format
+                leaderboard_df = hard_perf_df.copy()
+                leaderboard_df['rank'] = range(1, len(leaderboard_df) + 1)
+                leaderboard_df['hard_score_pct'] = (leaderboard_df['hard_pass_rate'] * 100).round(1)
+                leaderboard_df['overall_score_pct'] = (leaderboard_df['overall_pass_rate'] * 100).round(1)
+                leaderboard_df['performance_vs_overall'] = (leaderboard_df['hard_score_pct'] - leaderboard_df['overall_score_pct']).round(1)
+                
+                # Select and rename columns for clean leaderboard
+                leaderboard_clean = leaderboard_df[['rank', 'display_name', 'hard_questions_passed', 'hard_questions_attempted', 'hard_score_pct', 'overall_score_pct', 'performance_vs_overall']].copy()
+                leaderboard_clean.columns = ['Rank', 'Model', 'Hard Questions Passed', 'Hard Questions Attempted', 'Hard Subset Score (%)', 'Overall Score (%)', 'Difference (%)']
+                
+                # Save leaderboard
+                leaderboard_path = os.path.join(run_output_dir, "hard_subset_leaderboard.csv")
+                leaderboard_clean.to_csv(leaderboard_path, index=False)
+                print(f"Saved hard subset leaderboard to: {leaderboard_path}")
+                
+                # Print complete leaderboard in a pretty table format
+                print(f"\n🏆 Hard Subset Leaderboard (All Models):")
+                print("=" * 100)
+                print(f"{'Rank':<4} {'Model':<35} {'Score':<8} {'Pass/Total':<12} {'Overall':<8} {'Drop':<8}")
+                print("-" * 100)
+                
+                for _, row in leaderboard_clean.iterrows():
+                    rank = f"{int(row['Rank'])}."
+                    model = row['Model'][:34]  # Truncate long model names
+                    score = f"{row['Hard Subset Score (%)']}%"
+                    pass_total = f"{int(row['Hard Questions Passed'])}/{int(row['Hard Questions Attempted'])}"
+                    overall = f"{row['Overall Score (%)']}%"
+                    drop = f"{row['Difference (%)']}%"
+                    
+                    print(f"{rank:<4} {model:<35} {score:<8} {pass_total:<12} {overall:<8} {drop:<8}")
+                
+                print("=" * 100)
+                print(f"📊 Key Insights:")
+                print(f"   • Best Hard Subset Performance: {leaderboard_clean.iloc[0]['Model']} ({leaderboard_clean.iloc[0]['Hard Subset Score (%)']}%)")
+                
+                # Find model with smallest performance drop (least negative difference)
+                smallest_drop_idx = leaderboard_clean['Difference (%)'].abs().idxmin()
+                smallest_drop_model = leaderboard_clean.loc[smallest_drop_idx, 'Model']
+                smallest_drop_value = leaderboard_clean.loc[smallest_drop_idx, 'Difference (%)']
+                print(f"   • Smallest Performance Drop: {smallest_drop_model} ({abs(smallest_drop_value):.1f}%)")
+                
+                print(f"   • Average Hard Subset Score: {leaderboard_clean['Hard Subset Score (%)'].mean():.1f}%")
+                print(f"   • Average Performance Drop: {abs(leaderboard_clean['Difference (%)'].mean()):.1f}%")
+                print("=" * 100)
+                
+                # Exit early when doing hard leaderboard only
+                return
+                
+            else:
+                print("\nNo valid dataframes found. Cannot create hard subset.")
+                return
+                
+        except Exception as e:
+            print(f"\nError calculating hard subset: {e}")
+            return
+    
+    # --- Rest of analysis (only runs when hard_leaderboard_only=False) ---
+    
+    # --- Load category data and create subsets ---
+    try:
         if all_data_frames:
             # First, combine all dataframes to create category subsets later
             combined_df = pd.concat(all_data_frames)
@@ -631,7 +715,7 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
     summary_df['explainer_family'] = summary_df['explainer_model'].apply(infer_family_from_model)
     summary_df['plot_color'] = summary_df['explainer_family'].map(FAMILY_COLORS).fillna(FAMILY_COLORS['unknown'])
 
-    # --- Determine Autograder and Set Up Output Directory ---
+    # --- Determine Autograder ---
     report_autograder = "unknown" # Default if mixed or error
     safe_report_autograder = "unknown"
     if len(autograder_models_found) == 1:
@@ -645,14 +729,6 @@ def generate_benchmark_data(run_files, prices_path, paper_plots=False):
          print("Warning: Comparing runs with different autograders. Data generated, but use caution interpreting results.")
     else:
         print("\n--- Benchmark Summary (Could not determine Autograder) ---")
-
-
-    # --- Create Timestamped Output Directory ---
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    # New directory structure: analysis/runs/TIMESTAMP_AUTOGRADER/
-    run_output_dir = os.path.join(BASE_ANALYSIS_DIR, RUNS_SUBDIR, f"full benchmark")
-    os.makedirs(run_output_dir, exist_ok=True)
-    print(f"Created analysis run directory: {run_output_dir}")
     
     # Save the hard subset to a CSV file if we identified any hard captions
     if 'hard_captions' in locals() and hard_captions:
@@ -1683,12 +1759,16 @@ def calculate_benchmark_correlations(df, y_field="pass_rate_per_row"):
 
 
 if __name__ == "__main__":
-    # Add argument parsing for paper_plots option
+    # Add argument parsing for paper_plots and hard_leaderboard options
     import argparse
     parser = argparse.ArgumentParser(description="Generate benchmark results")
     parser.add_argument("--paper-plots", action="store_true", 
                       help="Generate only paper-ready scatter plots without interactive HTML")
+    parser.add_argument("--hard-leaderboard", action="store_true",
+                      help="Generate only hard subset leaderboard analysis (no plots or other reports)")
     args = parser.parse_args()
 
     # Run the data generation and report creation
-    generate_benchmark_data(RUN_FILES_TO_ANALYZE, MODEL_PRICES_PATH, paper_plots=args.paper_plots)
+    generate_benchmark_data(RUN_FILES_TO_ANALYZE, MODEL_PRICES_PATH, 
+                          paper_plots=args.paper_plots, 
+                          hard_leaderboard_only=args.hard_leaderboard)
