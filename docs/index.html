@@ -1,461 +1,621 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Benchmark Report</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HumorBench - Probing Non-STEM Reasoning in LLMs</title>
     <style>
-        body { 
-            font-family: sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            color: #333; 
-        }
-        .header { 
-            background-color: #f8f8f8; 
-            border-bottom: 1px solid #ddd; 
-            padding: 15px 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-        }
-        .title-container { 
-            flex: 1; 
-        }
-        h1 { 
-            margin: 0; 
-            font-size: 24px; 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
             color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px 20px 20px 20px;
+            background-color: #f8f9fa;
         }
-        .metadata { 
-            font-size: 12px; 
-            color: #666; 
-            margin-top: 5px; 
+        .container {
+            background-color: white;
+            padding: 20px 40px 40px 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .controls { 
-            display: flex; 
-            align-items: center; 
+        h1 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+        .authors {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.4;
+        }
+        .affiliations {
+            text-align: center;
+            font-size: 0.8em;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
             gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
         }
-        .control-group { 
-            display: flex; 
-            align-items: center; 
-        }
-        label { 
-            margin-right: 8px; 
-            font-weight: 600; 
-            font-size: 14px; 
-        }
-        select { 
-            padding: 6px 10px; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            background-color: white; 
-            min-width: 180px; 
-        }
-        .checkbox-wrapper { 
-            display: flex; 
-            align-items: center; 
-            margin-left: 5px; 
-        }
-        .checkbox-wrapper input { 
-            margin-right: 5px; 
-        }
-        .content { 
-            padding: 20px; 
-        }
-        #plot { 
-            height: calc(100vh - 110px); 
-            width: 100%; 
-            min-height: 500px; 
-        }
-        
-        /* Dropdown Style */
-        .dropdown {
-            position: relative;
+        .button {
             display: inline-block;
+            padding: 10px 25px;
+            text-decoration: none;
+            color: white;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.95em;
         }
-        .dropdown-btn {
-            padding: 6px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background-color: white;
-            cursor: pointer;
-            min-width: 180px;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .dropdown-btn:after {
-            content: "▼";
-            font-size: 10px;
-            margin-left: 5px;
+        .button-primary {
+            background-color: #3498db;
         }
-        .dropdown-content {
-            display: none;
+        .button-primary:hover {
+            background-color: #2980b9;
+        }
+        .button-secondary {
+            background-color: #34495e;
+        }
+        .button-secondary:hover {
+            background-color: #2c3e50;
+        }
+        .button-tertiary {
+            background-color: #e74c3c;
+        }
+        .button-tertiary:hover {
+            background-color: #c0392b;
+        }
+        .abstract {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+        .abstract h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.4em;
+        }
+        .abstract p {
+            margin-bottom: 10px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .abstract p:last-child {
+            margin-bottom: 0;
+        }
+        .key-insights {
+            margin: 30px 0;
+        }
+        .key-insights h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .key-insights ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .key-insights li {
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            position: relative;
+            padding-left: 40px;
+        }
+        .key-insights li:before {
+            content: "✓";
             position: absolute;
-            background-color: white;
-            min-width: 240px;
-            max-height: 300px;
-            overflow-y: auto;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-            border-radius: 4px;
-            padding: 5px 0;
+            left: 15px;
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.2em;
         }
-        .dropdown-content.show {
-            display: block;
+        .example-figure {
+            text-align: center;
+            margin: 15px 0 20px 0;
         }
-        .dropdown-item {
-            display: flex;
-            padding: 5px 10px;
-            align-items: center;
+        .example-figure img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .dropdown-item:hover {
-            background-color: #f1f1f1;
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid #ecf0f1;
+            color: #7f8c8d;
+            font-size: 0.9em;
         }
-        .dropdown-actions {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 10px;
-            border-top: 1px solid #eee;
-            margin-top: 5px;
-        }
-        .dropdown-action {
-            font-size: 12px;
-            color: #0066cc;
-            cursor: pointer;
-            background: none;
-            border: none;
-            padding: 2px 5px;
-        }
-        .dropdown-action:hover {
-            text-decoration: underline;
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            .button {
+                width: 200px;
+            }
         }
     </style>
 </head>
 <body>
-
-<div class="header">
-    <div class="title-container">
-        <h1>Humor Bench Results</h1>
-        <div class="metadata">
-            Generated: 2025-04-25 18:32:37 | Autograder: gpt-4o
+    <div class="container">
+        <h1>HumorBench</h1>
+        <p class="subtitle">Which LLMs Get the Joke? Probing Non-STEM Reasoning Abilities</p>
+        
+        <div class="authors">
+            <strong>Reuben Narad</strong><sup>1</sup>, 
+            <strong>Siddharth Suresh</strong><sup>2</sup>, 
+            <strong>Jiayi Chen</strong><sup>2</sup>, 
+            <strong>Pine S.L. Dysart-Bricken</strong><sup>1</sup>,<br>
+            <strong>Bob Mankoff</strong><sup>3</sup>, 
+            <strong>Robert Nowak</strong><sup>2</sup>, 
+            <strong>Jifan Zhang</strong><sup>2</sup>, 
+            <strong>Lalit Jain</strong><sup>1</sup>
         </div>
-    </div>
-    <div class="controls">
-        <div class="control-group">
-            <label for="y-axis-select">Y-Axis:</label>
-            <select id="y-axis-select">
-                <option value="pass_rate_per_row" selected>Pass Rate (Per Row)</option>
-                <option value="pass_rate_per_caption_all">Pass Rate (Per Caption - All)</option>
-                <option value="pass_rate_per_caption_some">Pass Rate (Per Caption - Some)</option>
-            </select>
+        
+        <div class="affiliations">
+            <sup>1</sup>University of Washington, Seattle &nbsp;&nbsp;
+            <sup>2</sup>University of Wisconsin-Madison &nbsp;&nbsp;
+            <sup>3</sup>Air Mail and Cartoon Collections
         </div>
-        <div class="control-group">
-            <label for="x-axis-select">X-Axis:</label>
-            <select id="x-axis-select">
-                <option value="total_cost" selected>Total Cost ($)</option>
-                <option value="gpqa_score">GPQA Score (%)</option>
-                <option value="arc_agi_score">ARC-AGI Score (%)</option>
-                <option value="lmarena_elo_score">LM Arena ELO Score</option>
-            </select>
-            <div class="checkbox-wrapper">
-                <input type="checkbox" id="log-scale-x" checked>
-                <label for="log-scale-x" style="font-weight: normal;">Log Scale</label>
+        
+        <div class="buttons">
+            <a href="paper.pdf" class="button button-primary">📄 Read the Paper</a>
+            <a href="https://github.com/ReubenNarad/Humor-Bench" class="button button-secondary">💻 View on GitHub</a>
+            <a href="results.html" class="button button-tertiary">📊 Interactive Results</a>
+        </div>
+        
+        <div class="abstract">
+            <h2>Abstract</h2>
+            <p>
+                We present HumorBench, a benchmark designed to evaluate large language models' (LLMs) ability to reason about and explain sophisticated humor in cartoon captions. As reasoning models increasingly saturate existing benchmarks in mathematics and science, novel and challenging evaluations of model intelligence beyond STEM domains are essential.
+            </p>
+            <p>
+                Reasoning is fundamentally involved in text-based humor comprehension, requiring the identification of connections between concepts in cartoons/captions and external cultural references, wordplays, and other mechanisms. HumorBench includes approximately 300 unique cartoon-caption pairs from the New Yorker Caption Contest and Cartoonstock.com, with expert-annotated evaluation rubrics identifying essential joke elements.
+            </p>
+        </div>
+        
+        <div class="leaderboard">
+            <h2>Leaderboard</h2>
+            <p style="margin-bottom: 20px; color: #7f8c8d;">Performance of current models on HumorBench (as of July 2025)</p>
+            <div class="tabs">
+                <button class="tab-button" id="hard-tab" onclick="switchTab('hard')">HumorBench-Hard</button>
+                <button class="tab-button" id="full-tab" onclick="switchTab('full')">Full Benchmark</button>
             </div>
-        </div>
-        <div class="control-group">
-            <div class="dropdown" id="model-dropdown">
-                <button class="dropdown-btn" id="model-dropdown-btn">All Models ▼</button>
-                <div class="dropdown-content" id="model-dropdown-content">
-                    <!-- Will be populated dynamically -->
-                    <div class="dropdown-actions">
-                        <button class="dropdown-action" id="select-all-models">Select All</button>
-                        <button class="dropdown-action" id="deselect-all-models">Deselect All</button>
-                    </div>
-                </div>
+            <div class="table-container">
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Model</th>
+                            <th>Score (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
             </div>
+            <div id="expand-button-container" style="text-align: center; margin-top: 15px; display: none;">
+                <button id="expand-leaderboard" class="expand-button">Show All Models ▼</button>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.9em; color: #7f8c8d;">
+                <em>Score represents the percentage of humor elements correctly identified. See our <a href="results.html">interactive results viewer</a> for detailed analysis.</em>
+            </p>
         </div>
-    </div>
-</div>
 
-<div class="content">
-    <div id="plot"></div>
-</div>
-
-<script>
-    // Embedded data - injected during HTML generation
-    const reportData = [{"display_name": "Qwen 2.5 72B", "explainer_model": "Qwen-Qwen2-5-72B-Instruct-Turbo", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.6112224448897795, "pass_rate_per_caption_all": 0.49514563106796117, "pass_rate_per_caption_some": 0.605177993527508, "total_cost": 1.1768771, "avg_cost_per_row": 0.002358471142284569, "plot_color": "lightblue", "explainer_family": "together", "num_rows": 499, "num_captions": 309, "gpqa_score": NaN, "arc_agi_score": NaN, "lmarena_elo_score": NaN}, {"display_name": "Llama 4 Scout", "explainer_model": "meta-llama-Llama-4-Scout-17B-16E-Instruct", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.6332665330661322, "pass_rate_per_caption_all": 0.5145631067961165, "pass_rate_per_caption_some": 0.6337648327939591, "total_cost": 1.05934316, "avg_cost_per_row": 0.0021229321843687374, "plot_color": "lightblue", "explainer_family": "together", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.572, "arc_agi_score": 0.005, "lmarena_elo_score": null}, {"display_name": "o3-mini", "explainer_model": "o3-mini", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.6392785571142284, "pass_rate_per_caption_all": 0.511326860841424, "pass_rate_per_caption_some": 0.6386192017259977, "total_cost": 2.2670413, "avg_cost_per_row": 0.004543168937875751, "plot_color": "#89e095", "explainer_family": "openai", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.77, "arc_agi_score": 0.291, "lmarena_elo_score": 1305}, {"display_name": "Llama 4 Maverick", "explainer_model": "meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.6673346693386774, "pass_rate_per_caption_all": 0.5566343042071198, "pass_rate_per_caption_some": 0.6699029126213594, "total_cost": 1.05301288, "avg_cost_per_row": 0.00211024625250501, "plot_color": "lightblue", "explainer_family": "together", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.698, "arc_agi_score": 0.044, "lmarena_elo_score": 1271}, {"display_name": "Gemini 1.5 pro", "explainer_model": "gemini-1-5-pro", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.687374749498998, "pass_rate_per_caption_all": 0.5857605177993528, "pass_rate_per_caption_some": 0.6995685005393745, "total_cost": 1.3681400000000001, "avg_cost_per_row": 0.0027417635270541086, "plot_color": "#8055e6", "explainer_family": "gemini", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.715, "arc_agi_score": 0.045, "lmarena_elo_score": 1302}, {"display_name": "gpt-4o", "explainer_model": "gpt-4o", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.7454909819639278, "pass_rate_per_caption_all": 0.6472491909385113, "pass_rate_per_caption_some": 0.7545846817691478, "total_cost": 2.022075, "avg_cost_per_row": 0.004052254509018036, "plot_color": "#89e095", "explainer_family": "openai", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.506, "arc_agi_score": 0.05, "lmarena_elo_score": 1407}, {"display_name": "o4-mini", "explainer_model": "o4-mini", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.7735470941883767, "pass_rate_per_caption_all": 0.7022653721682848, "pass_rate_per_caption_some": 0.7912621359223301, "total_cost": 1.940822, "avg_cost_per_row": 0.003889422845691383, "plot_color": "#89e095", "explainer_family": "openai", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.814, "arc_agi_score": NaN, "lmarena_elo_score": null}, {"display_name": "o1", "explainer_model": "o1", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.7875751503006012, "pass_rate_per_caption_all": 0.7087378640776699, "pass_rate_per_caption_some": 0.7939590075512405, "total_cost": 20.72983, "avg_cost_per_row": 0.04154274549098196, "plot_color": "#89e095", "explainer_family": "openai", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.78, "arc_agi_score": 0.31, "lmarena_elo_score": 1350}, {"display_name": "Gemini 2.5 pro", "explainer_model": "gemini-2-5-pro-preview-03-25", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.7995991983967936, "pass_rate_per_caption_all": 0.7249190938511327, "pass_rate_per_caption_some": 0.8069039913700107, "total_cost": 1.0057, "avg_cost_per_row": 0.002015430861723447, "plot_color": "#8055e6", "explainer_family": "gemini", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.802, "arc_agi_score": 0.125, "lmarena_elo_score": 1439}, {"display_name": "Claude 3.7", "explainer_model": "claude-3-7-sonnet-latest", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.8036072144288577, "pass_rate_per_caption_all": 0.7119741100323624, "pass_rate_per_caption_some": 0.8079827400215749, "total_cost": 2.6486275, "avg_cost_per_row": 0.005307870741482965, "plot_color": "#e3c771", "explainer_family": "anthropic", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.797, "arc_agi_score": 0.14, "lmarena_elo_score": 1293}, {"display_name": "Claude 3.7 (think: 4096)", "explainer_model": "claude-3-7-sonnet-latest", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.8096192384769539, "pass_rate_per_caption_all": 0.7378640776699029, "pass_rate_per_caption_some": 0.8241639697950378, "total_cost": 5.5528935, "avg_cost_per_row": 0.011128043086172344, "plot_color": "#e3c771", "explainer_family": "anthropic", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.797, "arc_agi_score": 0.14, "lmarena_elo_score": 1293}, {"display_name": "Claude 3.7 (think: 1024)", "explainer_model": "claude-3-7-sonnet-latest", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.8356713426853707, "pass_rate_per_caption_all": 0.7669902912621359, "pass_rate_per_caption_some": 0.8419633225458468, "total_cost": 4.8676485, "avg_cost_per_row": 0.009754806613226452, "plot_color": "#e3c771", "explainer_family": "anthropic", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.797, "arc_agi_score": 0.14, "lmarena_elo_score": 1293}, {"display_name": "o3", "explainer_model": "o3", "autograder_model": "gpt-4o", "pass_rate_per_row": 0.8657314629258517, "pass_rate_per_caption_all": 0.8122977346278317, "pass_rate_per_caption_some": 0.8748651564185546, "total_cost": 7.711965, "avg_cost_per_row": 0.015454839679358718, "plot_color": "#89e095", "explainer_family": "openai", "num_rows": 499, "num_captions": 309, "gpqa_score": 0.833, "arc_agi_score": 0.757, "lmarena_elo_score": null}];
-
-    // Wait for the DOM to be fully loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        const plotDiv = document.getElementById('plot');
-        const yAxisSelect = document.getElementById('y-axis-select');
-        const xAxisSelect = document.getElementById('x-axis-select');
-        const logScaleXCheckbox = document.getElementById('log-scale-x');
-        const modelDropdownBtn = document.getElementById('model-dropdown-btn');
-        const modelDropdownContent = document.getElementById('model-dropdown-content');
-        const selectAllButton = document.getElementById('select-all-models');
-        const deselectAllButton = document.getElementById('deselect-all-models');
-
-        let allModelNames = [];
-        let selectedModels = [];
-
-        // Toggle the dropdown visibility
-        modelDropdownBtn.addEventListener('click', function() {
-            modelDropdownContent.classList.toggle('show');
-        });
-
-        // Close dropdown when clicking outside
-        window.addEventListener('click', function(event) {
-            if (!event.target.matches('.dropdown-btn') && !event.target.closest('.dropdown-content')) {
-                modelDropdownContent.classList.remove('show');
+        <style>
+            .leaderboard {
+                margin: 20px 0 30px 0;
+                padding: 25px 30px 30px 30px;
+                background-color: #fff;
+                border-radius: 8px;
+                border: 1px solid #e1e4e8;
             }
-        });
-
-        // Function to initialize data and setup
-        function initializeData() {
-            if (!reportData || reportData.length === 0) {
-                plotDiv.innerHTML = '<p>No data available to plot.</p>';
-                return;
+            .leaderboard h2 {
+                color: #2c3e50;
+                margin-top: 0;
+                margin-bottom: 10px;
             }
-            
-            // Extract unique model names and sort them
-            allModelNames = [...new Set(reportData.map(d => d.display_name))].sort();
-            selectedModels = [...allModelNames]; // Start with all models selected
-            
-            // Check if GPQA data exists
-            const hasGpqaData = reportData.some(d => d.gpqa_score !== undefined && d.gpqa_score !== null);
-            
-            if (!hasGpqaData) {
-                // Disable GPQA option if no data at all
-                const gpqaOption = xAxisSelect.querySelector('option[value="gpqa_score"]');
-                if (gpqaOption) {
-                    gpqaOption.disabled = true;
-                    gpqaOption.text += " (No Data)";
+            .table-container {
+                overflow-x: auto;
+                margin: 0 -10px;
+            }
+            #leaderboard-table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 500px;
+            }
+            #leaderboard-table th {
+                background-color: #f6f8fa;
+                padding: 12px 16px;
+                text-align: left;
+                font-weight: 600;
+                color: #24292e;
+                border-bottom: 2px solid #e1e4e8;
+            }
+            #leaderboard-table td {
+                padding: 12px 16px;
+                border-bottom: 1px solid #e1e4e8;
+            }
+            #leaderboard-table tbody tr:hover {
+                background-color: #f6f8fa;
+            }
+            #leaderboard-table tbody tr:first-child {
+                background-color: #fff3cd;
+            }
+            #leaderboard-table tbody tr:first-child:hover {
+                background-color: #ffeeba;
+            }
+            .rank-1 {
+                font-weight: bold;
+                color: #d4af37;
+            }
+            .rank-2 {
+                font-weight: bold;
+                color: #c0c0c0;
+            }
+            .rank-3 {
+                font-weight: bold;
+                color: #cd7f32;
+            }
+            .model-family-openai {
+                color: #10a37f;
+            }
+            .model-family-anthropic {
+                color: #d97757;
+            }
+            .model-family-google {
+                color: #4285f4;
+            }
+            .model-family-xai {
+                color: #000000;
+            }
+            .model-family-deepseek {
+                color: #0ea5e9;
+            }
+            .model-family-microsoft {
+                color: #5e72e4;
+            }
+            .expand-button {
+                background-color: #f6f8fa;
+                border: 1px solid #e1e4e8;
+                border-radius: 6px;
+                padding: 8px 20px;
+                font-size: 14px;
+                color: #24292e;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .expand-button:hover {
+                background-color: #e1e4e8;
+                transform: translateY(-1px);
+            }
+            .expand-button:active {
+                transform: translateY(0);
+            }
+            .hidden-row {
+                display: none;
+            }
+            .tabs {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .tab-button {
+                background-color: #f6f8fa;
+                border: 1px solid #e1e4e8;
+                border-radius: 6px;
+                padding: 8px 20px;
+                font-size: 14px;
+                color: #24292e;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                flex: 1;
+            }
+            .tab-button:hover {
+                background-color: #e1e4e8;
+            }
+            .tab-button.active {
+                background-color: #0366d6;
+                color: white;
+                border-color: #0366d6;
+            }
+            @media (max-width: 768px) {
+                .table-container {
+                    margin: 0 -20px;
                 }
-            } else {
-                // Count how many models have GPQA data
-                const modelsWithGpqa = reportData.filter(d => d.gpqa_score !== undefined && d.gpqa_score !== null);
-                const gpqaOption = xAxisSelect.querySelector('option[value="gpqa_score"]');
-                
-                if (modelsWithGpqa.length < reportData.length) {
-                    // Some but not all models have GPQA data
-                    gpqaOption.text += ` (${modelsWithGpqa.length}/${reportData.length} models)`;
+                #leaderboard-table {
+                    font-size: 14px;
+                }
+                #leaderboard-table th,
+                #leaderboard-table td {
+                    padding: 8px 12px;
                 }
             }
-            
-            // Populate UI elements
-            populateModelDropdown();
-            updateModelButtonText();
-            updatePlot(); // Initial plot rendering
-        }
+        </style>
 
-        // Function to populate model dropdown
-        function populateModelDropdown() {
-            // Insert checkboxes before the dropdown actions
-            const dropdownActions = modelDropdownContent.querySelector('.dropdown-actions');
-            
-            allModelNames.forEach(name => {
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
+        <script>
+            // Store leaderboard data
+            let fullBenchmarkData = [];
+            let currentTab = 'hard'; // Default to HumorBench-Hard
+            let isExpanded = false;
+
+            // Function to parse CSV
+            function parseCSV(text) {
+                const lines = text.trim().split('\n');
+                const data = [];
                 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.value = name;
-                checkbox.id = `model-${name.replace(/\s+/g, '-')}`;
-                checkbox.checked = true; // Default to checked
-                
-                checkbox.addEventListener('change', function() {
-                    if (this.checked) {
-                        selectedModels.push(name);
-                    } else {
-                        selectedModels = selectedModels.filter(m => m !== name);
+                // Skip header and parse each line
+                for (let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim()) {
+                        // Handle potential commas in model names by parsing carefully
+                        const parts = lines[i].split(',');
+                        if (parts.length >= 4) {
+                            data.push({
+                                rank: parseInt(parts[0]),
+                                name: parts[1].trim(),
+                                fullScore: parseFloat(parts[2]),
+                                hardScore: parseFloat(parts[3])
+                            });
+                        }
                     }
-                    updateModelButtonText();
-                    updatePlot();
+                }
+                return data;
+            }
+
+            // Function to determine model family from name
+            function getModelFamily(modelName) {
+                const nameLower = modelName.toLowerCase();
+                if (nameLower.includes('gpt') || nameLower.includes('o1') || nameLower.includes('o3') || nameLower.includes('o4')) {
+                    return 'openai';
+                } else if (nameLower.includes('claude') || nameLower.includes('opus') || nameLower.includes('sonnet')) {
+                    return 'anthropic';
+                } else if (nameLower.includes('gemini')) {
+                    return 'google';
+                } else if (nameLower.includes('grok')) {
+                    return 'xai';
+                } else if (nameLower.includes('llama')) {
+                    return 'meta';
+                } else if (nameLower.includes('qwen')) {
+                    return 'qwen';
+                } else if (nameLower.includes('deepseek')) {
+                    return 'deepseek';
+                } else if (nameLower.includes('phi')) {
+                    return 'microsoft';
+                }
+                return 'other';
+            }
+
+            // Function to populate the table
+            function populateTable(tab) {
+                const tbody = document.getElementById('leaderboard-body');
+                const expandButtonContainer = document.getElementById('expand-button-container');
+                
+                // Clear existing content
+                tbody.innerHTML = '';
+                
+                // Sort data by the appropriate score
+                const sortedData = [...fullBenchmarkData].sort((a, b) => {
+                    const scoreA = tab === 'hard' ? a.hardScore : a.fullScore;
+                    const scoreB = tab === 'hard' ? b.hardScore : b.fullScore;
+                    return scoreB - scoreA;
                 });
                 
-                const label = document.createElement('label');
-                label.htmlFor = checkbox.id;
-                label.textContent = name;
-                label.style.fontWeight = 'normal';
-                label.style.marginLeft = '5px';
+                // Re-rank based on current tab
+                sortedData.forEach((model, index) => {
+                    model.currentRank = index + 1;
+                });
                 
-                item.appendChild(checkbox);
-                item.appendChild(label);
+                // Show expand button if there are more than 10 models
+                if (sortedData.length > 10) {
+                    expandButtonContainer.style.display = 'block';
+                } else {
+                    expandButtonContainer.style.display = 'none';
+                }
                 
-                // Insert before the dropdown actions
-                modelDropdownContent.insertBefore(item, dropdownActions);
-            });
-        }
-
-        // Function to update the dropdown button text
-        function updateModelButtonText() {
-            if (selectedModels.length === 0) {
-                modelDropdownBtn.textContent = "No Models Selected ▼";
-            } else if (selectedModels.length === allModelNames.length) {
-                modelDropdownBtn.textContent = "All Models ▼";
-            } else {
-                modelDropdownBtn.textContent = `${selectedModels.length} Models Selected ▼`;
-            }
-        }
-
-        // Function to format values based on axis type
-        function formatAxisValue(value, axisType) {
-            if (axisType === 'gpqa_score' || axisType === 'arc_agi_score') {
-                // Format as percentage
-                return value * 100;
-            }
-            // LM Arena ELO scores don't need transformation
-            return value;
-        }
-
-        // Function to get axis formatting settings
-        function getAxisSettings(axisType, useLogScale = false) {
-            const settings = {
-                type: useLogScale ? 'log' : 'linear',
-                autorange: true,
-                tickprefix: '',
-                ticksuffix: ''
-            };
-            
-            // Settings based on axis type
-            if (axisType === 'total_cost') {
-                settings.tickprefix = '$';
-            } else if (axisType === 'gpqa_score' || axisType === 'arc_agi_score') {
-                settings.ticksuffix = '%';
-            } else if (axisType === 'lmarena_elo_score') {
-                settings.ticksuffix = ''; // No suffix for ELO scores
-            }
-            
-            return settings;
-        }
-
-        // Function to update the plot
-        function updatePlot() {
-            if (!reportData || reportData.length === 0) {
-                 plotDiv.innerHTML = '<p>No data available to plot.</p>';
-                 return;
-             }
-
-            const selectedYAxis = yAxisSelect.value;
-            const selectedXAxis = xAxisSelect.value;
-            const useLogScaleX = logScaleXCheckbox.checked;
-
-            // Filter data based on selected models
-            // Plus filter for only models that have data for the selected axis
-            const filteredData = reportData.filter(d => 
-                selectedModels.includes(d.display_name) && 
-                // Check that the model has the selected data
-                d[selectedXAxis] !== undefined && 
-                d[selectedXAxis] !== null && 
-                d[selectedYAxis] !== undefined && 
-                d[selectedYAxis] !== null
-            );
-
-            if (filteredData.length === 0) {
-                 plotDiv.innerHTML = '<p>No data available for the selected combination of models and axes.<br>Some models may not have data for GPQA Score.</p>';
-                 return;
-             }
-
-            const trace = {
-                x: filteredData.map(d => formatAxisValue(d[selectedXAxis], selectedXAxis)),
-                y: filteredData.map(d => d[selectedYAxis] * 100), // Convert to percentage
-                text: filteredData.map(d => d.display_name), // Text for hover/annotations
-                mode: 'markers+text',
-                type: 'scatter',
-                marker: {
-                    size: 12,
-                    color: filteredData.map(d => d.plot_color),
-                    line: {
-                        color: 'black',
-                        width: 1
+                sortedData.forEach((model, index) => {
+                    const row = document.createElement('tr');
+                    
+                    // Add hidden class for rows beyond top 10
+                    if (index >= 10 && !isExpanded) {
+                        row.className = 'hidden-row';
                     }
-                },
-                textposition: 'top center',
-                textfont: {
-                    size: 11
-                },
-                hoverinfo: 'text+x+y',
-                hovertemplate: '<b>%{text}</b><br>' +
-                               `${xAxisSelect.options[xAxisSelect.selectedIndex].text}: %{x:.2f}<br>` + 
-                               `${yAxisSelect.options[yAxisSelect.selectedIndex].text}: %{y:.2f}%` +
-                               '<extra></extra>' // Hide extra hover info
-            };
-
-            const layout = {
-                title: `Benchmark: ${yAxisSelect.options[yAxisSelect.selectedIndex].text} vs ${xAxisSelect.options[xAxisSelect.selectedIndex].text}`,
-                xaxis: {
-                    title: `${xAxisSelect.options[xAxisSelect.selectedIndex].text}${useLogScaleX ? ' (Log Scale)' : ''}`,
-                    ...getAxisSettings(selectedXAxis, useLogScaleX)
-                },
-                yaxis: {
-                    title: yAxisSelect.options[yAxisSelect.selectedIndex].text + ' (%)',
-                    ticksuffix: '%',
-                    autorange: true
-                },
-                hovermode: 'closest',
-                margin: { l: 60, r: 30, t: 40, b: 70 },
-                autosize: true,
-            };
-
-             // Adjust Y-axis range slightly for better text visibility if needed
-            const yValues = filteredData.map(d => d[selectedYAxis] * 100);
-            if (yValues.length > 0) {
-                const minY = Math.min(...yValues);
-                const maxY = Math.max(...yValues);
-                const yPadding = Math.max(2, (maxY - minY) * 0.05);
-                layout.yaxis.range = [minY - yPadding, maxY + yPadding * 1.5];
+                    
+                    // Rank cell
+                    const rankCell = document.createElement('td');
+                    rankCell.textContent = model.currentRank;
+                    if (model.currentRank <= 3) {
+                        rankCell.className = `rank-${model.currentRank}`;
+                    }
+                    
+                    // Model name cell
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = model.name;
+                    nameCell.className = `model-family-${getModelFamily(model.name)}`;
+                    
+                    // Score cell
+                    const scoreCell = document.createElement('td');
+                    const score = tab === 'hard' ? model.hardScore : model.fullScore;
+                    scoreCell.textContent = score.toFixed(1) + '%';
+                    
+                    row.appendChild(rankCell);
+                    row.appendChild(nameCell);
+                    row.appendChild(scoreCell);
+                    
+                    tbody.appendChild(row);
+                });
             }
 
-            // Adjust X-axis range slightly, especially for log scale
-             const xValues = filteredData.map(d => formatAxisValue(d[selectedXAxis], selectedXAxis));
-             if (xValues.length > 0) {
-                 const minX = Math.min(...xValues);
-                 const maxX = Math.max(...xValues);
-                 if (useLogScaleX) {
-                    const factor = 1.1;
-                    const effectiveMinX = Math.max(minX, 1e-9);
-                    layout.xaxis.range = [Math.log10(effectiveMinX / factor), Math.log10(maxX * factor)];
-                 } else {
-                     const xPadding = Math.max(0.01, (maxX - minX) * 0.05);
-                     layout.xaxis.range = [minX - xPadding, maxX + xPadding];
-                 }
-             }
+            // Function to switch tabs
+            function switchTab(tab) {
+                currentTab = tab;
+                
+                // Update tab button states
+                document.getElementById('hard-tab').classList.toggle('active', tab === 'hard');
+                document.getElementById('full-tab').classList.toggle('active', tab === 'full');
+                
+                // Repopulate table
+                populateTable(tab);
+            }
 
-            Plotly.newPlot(plotDiv, [trace], layout, {responsive: true});
-        }
+            // Initialize the page
+            document.addEventListener('DOMContentLoaded', function() {
+                // Load CSV data
+                fetch('leaderboard.csv')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.text();
+                    })
+                    .then(text => {
+                        console.log('CSV loaded successfully');
+                        console.log('First few lines:', text.substring(0, 200));
+                        
+                        fullBenchmarkData = parseCSV(text);
+                        console.log('Parsed data:', fullBenchmarkData);
+                        
+                        // Set initial tab to hard
+                        switchTab('hard');
+                        
+                        // Add click handler for expand/collapse
+                        const expandButton = document.getElementById('expand-leaderboard');
+                        if (expandButton) {
+                            expandButton.addEventListener('click', function() {
+                                isExpanded = !isExpanded;
+                                
+                                const hiddenRows = document.querySelectorAll('.hidden-row');
+                                hiddenRows.forEach(row => {
+                                    if (isExpanded) {
+                                        row.style.display = 'table-row';
+                                    } else {
+                                        row.style.display = 'none';
+                                    }
+                                });
+                                
+                                // Update button text
+                                expandButton.textContent = isExpanded ? 'Show Top 10 Only ▲' : 'Show All Models ▼';
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading leaderboard data:', error);
+                        document.getElementById('leaderboard-body').innerHTML = 
+                            '<tr><td colspan="3" style="text-align: center; color: red;">Error loading leaderboard data. Please check console for details.</td></tr>';
+                    });
+            });
+        </script>
 
-        // Event listeners for controls
-        yAxisSelect.addEventListener('change', updatePlot);
-        xAxisSelect.addEventListener('change', updatePlot);
-        logScaleXCheckbox.addEventListener('change', updatePlot);
+        <div class="key-insights">
+            <h2>Key Findings</h2>
+            <ul>
+                <li>LLM progress on STEM reasoning transfers effectively to humor comprehension</li>
+                <li>Models trained exclusively on STEM reasoning data still perform well on HumorBench, demonstrating strong transferability of reasoning abilities</li>
+                <li>Test-time scaling by increasing thinking token budgets yields mixed results across different models in humor reasoning</li>
+                <li>On HumorBench-hard, which features more complex examples requiring multiple reasoning steps or obscure cultural knowledge, no current LLM exceeds 50% accuracy</li>
+            </ul>
+        </div>
 
-        selectAllButton.addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent closing the dropdown
-            modelDropdownContent.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
-            selectedModels = [...allModelNames];
-            updateModelButtonText();
-            updatePlot();
-        });
-
-        deselectAllButton.addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent closing the dropdown
-            modelDropdownContent.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-            selectedModels = [];
-            updateModelButtonText();
-            updatePlot();
-        });
-
-        // Initialize data and UI
-        initializeData();
-    });
-</script>
-
+        <div class="how-it-works">
+            <h2>How HumorBench Works</h2>
+            <div class="figure-container">
+                <img src="humorbench_intro.jpg" alt="HumorBench Overview" style="max-width: 60%; height: auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px auto; display: block;">
+            </div>
+            <p>
+                HumorBench takes a fundamentally different approach to evaluating humor understanding in AI. While previous benchmarks often conflate two distinct challenges—understanding what makes something intended to be funny (objective comprehension) versus finding it amusing (subjective appreciation)—we focus exclusively on the former.
+            </p>
+            
+            <h3>The Task</h3>
+            <p>
+                Given a textual description of a cartoon and its caption, models must explain <em>what</em> the joke is, identifying the specific connections and mental leaps required to understand the humor. For instance, recognizing that "Death" playing chess references both the literal game and the metaphorical "chess match with death," or understanding how a swimming person might be interpreted as "groceries" from a shark's perspective.
+            </p>
+            
+            <h3>What Makes HumorBench Different</h3>
+            <ul style="list-style-type: disc; padding-left: 30px;">
+                <li><strong>Objective vs. Subjective:</strong> We separate humor comprehension (understanding the intended joke) from humor appreciation (finding it funny). Our benchmark measures whether models can identify the factual elements that create the humor, not whether they align with human preferences about what's amusing.</li>
+                
+                <li><strong>Expert-Annotated Elements:</strong> Each cartoon-caption pair is annotated with 1-3 concise "elements"—the essential objective components needed to understand the joke. These serve as a rubric for evaluation, ensuring consistent and fair assessment.</li>
+                
+                <li><strong>Open-Ended Generation:</strong> Unlike multiple-choice formats that can hint at answers, models must generate free-form explanations, better reflecting real understanding.</li>
+                
+                <li><strong>Sophisticated Humor:</strong> We use New Yorker Caption Contest winners and top Cartoonstock cartoons—sources known for dry, witty humor requiring cultural knowledge, wordplay recognition, and complex reasoning.</li>
+                
+                <li><strong>Automatic Grading at Scale:</strong> Our LLM-based autograder achieves 92% agreement with human judges, enabling large-scale evaluation while maintaining quality.</li>
+            </ul>
+            
+            <p>
+                This approach reveals that humor comprehension is fundamentally a reasoning task. Models must connect visual elements, caption text, and external knowledge—making the same kinds of logical leaps required in STEM domains, but applied to cultural and linguistic contexts.
+            </p>
+        </div>
+        
+        <style>
+            .how-it-works {
+                margin: 50px 0;
+                padding: 30px;
+                background-color: #f8f9fa;
+                border-radius: 8px;
+            }
+            .how-it-works h2 {
+                color: #2c3e50;
+                margin-bottom: 20px;
+            }
+            .how-it-works h3 {
+                color: #34495e;
+                margin-top: 25px;
+                margin-bottom: 15px;
+            }
+            .figure-container {
+                text-align: center;
+                margin: 30px 0;
+            }
+            .how-it-works ul {
+                margin: 20px 0;
+            }
+            .how-it-works li {
+                margin-bottom: 12px;
+                line-height: 1.8;
+            }
+            .how-it-works p {
+                margin-bottom: 15px;
+                line-height: 1.8;
+            }
+        </style>
+        
+        <div class="footer">
+            <p>Correspondence: <a href="mailto:rnarad@uw.edu">rnarad@uw.edu</a>, <a href="mailto:jifan@cs.wisc.edu">jifan@cs.wisc.edu</a></p>
+        </div>
+    </div>
 </body>
 </html>
