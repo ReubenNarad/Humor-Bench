@@ -28,8 +28,8 @@ async def get_category_value(description, caption, element, category_name, model
                 }
             ],
             model=model_name,
-            temperature=0,
-            max_tokens=10 
+            # temperature=0,
+            # max_tokens=10 
         )
         response_content = chat_completion.choices[0].message.content
         if "TRUE" in response_content.upper():

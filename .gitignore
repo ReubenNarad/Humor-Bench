@@ -48,7 +48,7 @@ Thumbs.db
 *.tmp
 notes.txt
 /legacy/
-/analysis/
+# /analysis/
 /paper
 # Ensure docs directory is not ignored
 !docs/

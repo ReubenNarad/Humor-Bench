@@ -40,7 +40,7 @@ class AutograderClient:
         self.api_key = api_key
         
         # Validate family
-        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.ALIBABA]:
+        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.ALIBABA, MessageChain.OPENROUTER]:
             raise ValueError(f"Unsupported model family: {family}")
         
         # Initialize the appropriate client based on the family
@@ -61,6 +61,10 @@ class AutograderClient:
             Inferred model family
         """
         model_lower = model.lower()
+        
+        # Check for OpenRouter models first (models separated by / and have a :free or :pro suffix)
+        if '/' in model_lower and (':free' in model_lower or ':pro' in model_lower):
+            return MessageChain.OPENROUTER
         
         # Check for Alibaba Qwen models first for direct API usage
         if 'qwen' in model_lower and 'dashscope' not in model_lower and not any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'deepseek-ai/', 'togethercomputer/']):
@@ -92,12 +96,11 @@ class AutograderClient:
     
     def _initialize_client(self):
         """
-        Initialize the appropriate ASYNCHRONOUS client based on the model family.
+        Initialize the appropriate client based on the model family.
         
         Returns:
-            Initialized asynchronous client
+            Initialized client
         """
-        # Get API key if not provided
         api_key = self.api_key
         
         if self.family == MessageChain.OPENAI:
@@ -111,17 +114,6 @@ class AutograderClient:
             
             return AsyncOpenAI(api_key=api_key)
             
-        elif self.family == MessageChain.DEEPSEEK:
-            from openai import OpenAI
-            
-            if not api_key:
-                # Get from environment
-                api_key = os.environ.get("DEEPSEEK_API_KEY")
-                if not api_key:
-                    raise ValueError("DeepSeek API key not found in environment variables")
-            
-            return OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
-            
         elif self.family == MessageChain.GEMINI:
             from google import genai
             
@@ -131,9 +123,9 @@ class AutograderClient:
                 if not api_key:
                     raise ValueError("Gemini API key not found in environment variables")
             
-            # Create and return a Client object instead of configuring globally
+            # Use the generative API
             genai.configure(api_key=api_key)
-            return genai.GenerativeModel(self.model)
+            return genai
             
         elif self.family == MessageChain.CLAUDE:
             from anthropic import AsyncAnthropic
@@ -146,6 +138,17 @@ class AutograderClient:
             
             return AsyncAnthropic(api_key=api_key)
         
+        elif self.family == MessageChain.DEEPSEEK:
+            from openai import AsyncOpenAI
+            
+            if not api_key:
+                # Get from environment or use provided API key
+                api_key = os.environ.get("DEEPSEEK_API_KEY")
+                if not api_key:
+                    raise ValueError("DeepSeek API key not found in environment variables")
+            
+            return AsyncOpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
+            
         elif self.family == MessageChain.TOGETHER:
             from openai import AsyncOpenAI
             
@@ -158,14 +161,27 @@ class AutograderClient:
             return AsyncOpenAI(api_key=api_key, base_url="https://api.together.xyz/v1")
 
         elif self.family == MessageChain.ALIBABA:
-            from openai import AsyncOpenAI # Assuming AsyncOpenAI is desired, change if synchronous OpenAI is used elsewhere for autograder
+            from openai import AsyncOpenAI
             
             if not api_key:
                 api_key = os.environ.get("DASHSCOPE_API_KEY")
                 if not api_key:
                     raise ValueError("Alibaba Dashscope API key (DASHSCOPE_API_KEY) not found in environment variables")
             
-            return AsyncOpenAI(api_key=api_key, base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+            return AsyncOpenAI(api_key=api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
+        
+        elif self.family == MessageChain.OPENROUTER:
+            from openai import AsyncOpenAI
+            
+            if not api_key:
+                # Get from environment
+                api_key = os.environ.get("OPENROUTER_API_KEY")
+                if not api_key:
+                    raise ValueError("OpenRouter API key not found in environment variables")
+            
+            return AsyncOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
+            
+        raise ValueError(f"Unsupported model family for client: {self.family}")
     
     def format_prompt(self, description, caption, explanation, anticipated_point):
         """
@@ -282,8 +298,7 @@ class AutograderClient:
     
     async def _make_api_call(self, formatted_messages):
         """
-        Make the ASYNCHRONOUS API call to the LLM based on the model family.
-        Includes 'thinking' parameter for compatible Claude models if budget is set.
+        Make the API call to the LLM based on the model family.
         
         Args:
             formatted_messages: The formatted messages for the specific API
@@ -296,14 +311,11 @@ class AutograderClient:
                 model=self.model,
                 **formatted_messages
             )
-            usage = response.usage
-            prompt_tokens = getattr(usage, 'prompt_tokens', 0) if usage else 0
-            completion_tokens = getattr(usage, 'completion_tokens', 0) if usage else 0
             return {
-                "content": response.choices[0].message.content, # Returns string
+                "content": response.choices[0].message.content,
                 "usage": {
-                    "tokens_in": prompt_tokens,
-                    "tokens_out": completion_tokens,
+                    "tokens_in": response.usage.prompt_tokens,
+                    "tokens_out": response.usage.completion_tokens
                 }
             }
             
@@ -389,6 +401,23 @@ class AutograderClient:
                     "tokens_out": response.usage.completion_tokens
                 }
             }
+        
+        elif self.family == MessageChain.OPENROUTER:
+            try:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    **formatted_messages
+                )
+                return {
+                    "content": response.choices[0].message.content,
+                    "usage": {
+                        "tokens_in": response.usage.prompt_tokens,
+                        "tokens_out": response.usage.completion_tokens
+                    }
+                }
+            except Exception as e:
+                print(f"Error calling OpenRouter API: {e}")
+                raise  # Re-raise the exception after logging
         
         elif self.family == MessageChain.ALIBABA:
             api_params = {

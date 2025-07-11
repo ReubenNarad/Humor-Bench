@@ -22,11 +22,11 @@
 #     --run-name "claude_thinking_budget_16384"\
 #     --n-workers 5
 
-# python main_benchmark.py \
-#     --explainer-model "grok-3-beta" \
-#     --autograder-model "gpt-4o" \
-#     --run-name "grok_3_beta" \
-#     --n-workers 5 \
+python main_benchmark.py \
+    --explainer-model "grok-4-0709" \
+    --autograder-model "gpt-4o" \
+    --run-name "grok_4_0709" \
+    --n-workers 2 \
 
 # python main_benchmark.py \
 #     --explainer-model "o4-mini" \
@@ -43,8 +43,39 @@
 #     --n-workers 3
 
 
-python main_benchmark.py \
-    --explainer-model "gemini-2.5-pro-preview-03-25" \
-    --autograder-model "gpt-4o" \
-    --run-name "gemini_2.5_rerun" \
-    --n-workers 10
+# python main_benchmark.py \
+#     --explainer-model "gemini-2.5-pro-preview-03-25" \
+#     --autograder-model "gpt-4o" \
+#     --run-name "gemini_2.5_rerun" \
+#     --n-workers 10
+
+# # Example command to run benchmark with OpenRouter model
+# python main_benchmark.py \
+#     --explainer-model "microsoft/phi-4-reasoning:free" \
+#     --autograder-model "gpt-4o" \
+#     --run-name "phi-4_base" \
+#     --n-workers 2 \
+#     --limit 10
+
+# Gemini Thinking Budget Experiment
+
+
+# Gemini Thinking Budget Experiment
+# for model in "gemini-2.5-pro-preview-03-25" "gemini-2.5-flash-preview-04-17"; do
+#     for budget in 100 200 500 1000 4000; do
+#         echo "Running benchmark for $model with budget $budget"
+#         # Run benchmark with current model and thinking budget
+#         python main_benchmark.py \
+#             --explainer-model "$model" \
+#             --autograder-model "gpt-4o" \
+#             --run-name "gemini_thinking_budget_${budget}_$(echo $model | tr '-' '_')" \
+#             --thinking-budget $budget \
+#             --n-workers 15
+#     done
+# done
+
+# python main_benchmark.py \
+#     --explainer-model "claude-sonnet-4-20250514" \
+#     --autograder-model "gpt-4o" \
+#     --run-name "claude-4-sonnet" \
+#     --n-workers 10 \

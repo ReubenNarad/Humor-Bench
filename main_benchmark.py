@@ -195,7 +195,7 @@ async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=D
     print(f"Explainer: {explainer_model}, Autograder: {autograder_model}")
     print(f"Input: {input_csv}, Limit: {limit}, Workers: {n_workers}")
     if thinking_budget is not None:
-        print(f"Thinking Budget: {thinking_budget} (for Claude or Alibaba models)")
+        print(f"Thinking Budget: {thinking_budget} (for Claude, Gemini, or Alibaba models)")
     if reasoning_effort is not None: # Log reasoning effort if provided
         print(f"OpenAI Reasoning Effort: {reasoning_effort}")
 
@@ -246,10 +246,13 @@ async def run_benchmark(explainer_model, autograder_model, run_name, input_csv=D
         if thinking_budget is not None:
             is_claude_explainer = explainer.family == MessageChain.CLAUDE
             is_alibaba_explainer = explainer.family == MessageChain.ALIBABA
+            is_gemini_explainer = explainer.family == MessageChain.GEMINI
             # No need to check autograder family for thinking_budget now
             
             if is_alibaba_explainer:
                 print(f"Using thinking budget for Alibaba explainer model: {thinking_budget} tokens")
+            elif is_gemini_explainer:
+                print(f"Using thinking budget for Gemini explainer model: {thinking_budget} tokens")
             # The warning for Claude explainer without budget, or other explainer families with budget
             # is handled within ExplainerClient.__init__
                 

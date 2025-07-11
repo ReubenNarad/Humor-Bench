@@ -1,7 +1,7 @@
 class MessageChain:
     """
     A universal message chain class that can be formatted for different LLM providers:
-    OpenAI, DeepSeek, Gemini, and Claude/Anthropic.
+    OpenAI, DeepSeek, Gemini, Claude/Anthropic, Together, XAI, Alibaba, and OpenRouter.
     """
     
     # Model family constants
@@ -12,15 +12,16 @@ class MessageChain:
     TOGETHER = "together"
     XAI = "xai"
     ALIBABA = "alibaba"
+    OPENROUTER = "openrouter"  # New constant for OpenRouter API
     
     def __init__(self, family):
         """
         Initialize a message chain for a specific model family.
         
         Args:
-            family: The model family (openai, deepseek, gemini, claude, together, xai, alibaba)
+            family: The model family (openai, deepseek, gemini, claude, together, xai, alibaba, openrouter)
         """
-        if family not in [self.OPENAI, self.DEEPSEEK, self.GEMINI, self.CLAUDE, self.TOGETHER, self.XAI, self.ALIBABA]:
+        if family not in [self.OPENAI, self.DEEPSEEK, self.GEMINI, self.CLAUDE, self.TOGETHER, self.XAI, self.ALIBABA, self.OPENROUTER]:
             raise ValueError(f"Unsupported model family: {family}")
         self.family = family
         self.messages = []
@@ -66,6 +67,8 @@ class MessageChain:
             return self._format_for_openai()
         elif target_family == self.ALIBABA:
             return self._format_for_alibaba()
+        elif target_family == self.OPENROUTER:
+            return self._format_for_openrouter()
         else:
             raise ValueError(f"Unsupported model family: {target_family}")
     
@@ -105,4 +108,9 @@ class MessageChain:
 
     def _format_for_alibaba(self):
         """Format messages for Alibaba API (OpenAI compatible)."""
+        return self._format_for_openai()
+
+    def _format_for_openrouter(self):
+        """Format messages for OpenRouter API."""
+        # OpenRouter uses the same format as OpenAI
         return self._format_for_openai()

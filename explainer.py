@@ -28,7 +28,7 @@ class ExplainerClient:
             model: The model name to use (e.g., "gpt-4o", "claude-3.7-sonnet...")
             family: The model family (optional, inferred if not provided)
             api_key: API key for the specified model family (optional)
-            thinking_budget: Max tokens for Claude's extended thinking or Alibaba's reasoning (optional)
+            thinking_budget: Max tokens for Claude/Gemini's extended thinking or Alibaba's reasoning (optional)
             reasoning_effort: Effort level for OpenAI reasoning ('low', 'medium', 'high') (optional)
         """
         self.model = model
@@ -43,15 +43,15 @@ class ExplainerClient:
         self.api_key = api_key
         
         # Validate family
-        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.XAI, MessageChain.ALIBABA]:
+        if family not in [MessageChain.OPENAI, MessageChain.DEEPSEEK, MessageChain.GEMINI, MessageChain.CLAUDE, MessageChain.TOGETHER, MessageChain.XAI, MessageChain.ALIBABA, MessageChain.OPENROUTER]:
             raise ValueError(f"Unsupported model family: {family}")
         
         # Initialize the appropriate client based on the family
         self.client = self._initialize_client()
         
-        # Optional: Add a check if budget is provided for non-Claude/non-Alibaba models
-        if self.thinking_budget is not None and self.family not in [MessageChain.CLAUDE, MessageChain.ALIBABA]:
-             print(f"Warning: thinking_budget provided for non-Claude/non-Alibaba model '{self.model}' (Family: {self.family}). It will be ignored.")
+        # Optional: Add a check if budget is provided for non-Claude/non-Alibaba/non-Gemini models
+        if self.thinking_budget is not None and self.family not in [MessageChain.CLAUDE, MessageChain.ALIBABA, MessageChain.GEMINI]:
+             print(f"Warning: thinking_budget provided for unsupported model '{self.model}' (Family: {self.family}). It will be ignored.")
         
         # Optional: Add a check if reasoning_effort is provided for non-OpenAI models
         if self.reasoning_effort is not None:
@@ -75,6 +75,13 @@ class ExplainerClient:
             Inferred model family
         """
         model_lower = model.lower()
+        
+        # Check for OpenRouter models first (models separated by / and have a :free or :pro suffix)
+        if '/' in model_lower and (':free' in model_lower or ':pro' in model_lower):
+            return MessageChain.OPENROUTER
+        # Special case for specific OpenRouter models without :free/:pro suffix
+        if model_lower == 'microsoft/phi-4' or model_lower.startswith('microsoft/phi-4-'):
+            return MessageChain.OPENROUTER
         
         # Check for Alibaba Qwen models first for direct API usage
         if 'qwen' in model_lower and 'dashscope' not in model_lower and not any(prefix in model_lower for prefix in ['meta-llama/', 'mistralai/', 'deepseek-ai/', 'togethercomputer/']):
@@ -139,7 +146,7 @@ class ExplainerClient:
                     raise ValueError("Gemini API key not found in environment variables")
             
             # Create a client with the API key
-            return genai.Client(api_key=api_key)
+            return genai.Client(api_key=api_key)  # Return a Client instance instead
             
         elif self.family == MessageChain.CLAUDE:
             from anthropic import AsyncAnthropic
@@ -183,6 +190,17 @@ class ExplainerClient:
                     raise ValueError("Alibaba Dashscope API key (DASHSCOPE_API_KEY) not found in environment variables")
             
             return AsyncOpenAI(api_key=api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
+        
+        elif self.family == MessageChain.OPENROUTER:
+            from openai import AsyncOpenAI
+            
+            if not api_key:
+                # Get from environment
+                api_key = os.environ.get("OPENROUTER_API_KEY")
+                if not api_key:
+                    raise ValueError("OpenRouter API key not found in environment variables")
+            
+            return AsyncOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
         
         raise ValueError(f"Unsupported model family for async client: {self.family}")
     
@@ -355,6 +373,29 @@ class ExplainerClient:
                 }
             }
 
+        # --- OpenRouter API ---
+        elif self.family == MessageChain.OPENROUTER:
+            api_params = {
+                "model": self.model,
+                **formatted_messages  # This should contain 'messages' key
+            }
+            
+            # For OpenRouter, we can provide an extra_body parameter with additional options if needed
+            # api_params["extra_body"] = {}
+            
+            try:
+                response = await self.client.chat.completions.create(**api_params)
+                return {
+                    "content": response.choices[0].message.content,
+                    "usage": {
+                        "tokens_in": response.usage.prompt_tokens,
+                        "tokens_out": response.usage.completion_tokens
+                    }
+                }
+            except Exception as e:
+                print(f"Error calling OpenRouter API: {e}")
+                raise  # Re-raise the exception after logging
+
         # --- Together API (Uses OpenAI compatible structure but NOT reasoning) ---
         elif self.family == MessageChain.TOGETHER:
             api_params = {
@@ -397,11 +438,28 @@ class ExplainerClient:
                                 break
                         break
             
-            # Use the new SDK structure
+            # Use the new SDK structure with thinking_budget if provided
+            generation_params = {
+                "model": self.model,
+                "contents": content_text
+            }
+            
+            # Add thinking_config if budget is specified
+            if self.thinking_budget is not None and self.thinking_budget > 0:
+                # Import the necessary types for thinking configuration
+                from google.genai import types
+                
+                # Add thinking_config with the specified budget
+                generation_params["config"] = types.GenerateContentConfig(
+                    thinking_config=types.ThinkingConfig(
+                        thinking_budget=self.thinking_budget
+                    )
+                )
+            
+            # Call the model using asyncio.to_thread since the API might not be async
             response = await asyncio.to_thread(
                 self.client.models.generate_content,
-                model=self.model,
-                contents=content_text
+                **generation_params
             )
             
             # Extract usage metadata if available
@@ -411,7 +469,9 @@ class ExplainerClient:
                     # Map fields to our standard keys
                     usage_data = {
                         "tokens_in": response.usage_metadata.prompt_token_count,
-                        "tokens_out": response.usage_metadata.candidates_token_count
+                        "tokens_out": response.usage_metadata.candidates_token_count,
+                        "thinking_tokens": response.usage_metadata.thoughts_token_count if hasattr(response.usage_metadata, 'thoughts_token_count') else 0,
+                        "total_tokens": response.usage_metadata.total_token_count if hasattr(response.usage_metadata, 'total_token_count') else 0
                     }
                 except AttributeError as e:
                     print(f"Warning: Could not access usage_metadata attributes for Gemini: {e}")

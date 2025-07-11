@@ -19,6 +19,22 @@
     "score": 0.045,
     "source_url": "https://arcprize.org/blog/introducing-arc-agi-public-leaderboard"
   },
+  "o1": {
+    "score": 0.31,
+    "source_url": "https://arcprize.org/leaderboard"
+  },
+  "o3": {
+    "score": 0.757,
+    "source_url": "https://arcprize.org/blog/oai-o3-pub-breakthrough"
+  },
+  "o4-mini": {
+    "score": null,
+    "source_url": null
+  },
+  "o3-mini": {
+    "score": 0.291,
+    "source_url": "https://arcprize.org/leaderboard"
+  },
   "deepseek-ai/DeepSeek-V3": {
     "score": null,
     "source_url": null
@@ -31,8 +47,8 @@
     "score": 0.005,
     "source_url": "https://arcprize.org/leaderboard"
   },
-  "o3": {
-    "score": 0.757,
-    "source_url": "https://arcprize.org/blog/oai-o3-pub-breakthrough"
+  "grok-4-0709": {
+    "score": 0.66,
+    "source_url": "https://arcprize.org/leaderboard"
   }
 }

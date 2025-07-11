@@ -52,44 +52,38 @@ Caption: {caption}
 def categorize_prompt(description, caption, element, category):
     import pandas as pd
     if category == "wordplay":
-        examples = [[178, 68, 256], [176, 256]]
+        description = "Elements that derive humor primarily through clever use of language, such as puns, homonyms, double meanings, unexpected interpretations of phrases, or linguistic twists."
+        # examples = [[178, 68, 256], [176, 256]]
     elif category == "cultural reference":
-        examples = [[122, 386, 134],[269,263,332]]
+        description = "Captions whose humor relies on knowledge or references to shared cultural phenomena, events, celebrities, media, historical contexts, or widely recognizable tropes from popular culture."
+        # examples = [[122, 386, 134],[269,263,332]]
     elif category == "toxic or shocking":
-        examples = [[294, 24, 337], [99,29,338]]
+        description = "Captions that gain comedic effect through pushing social boundaries, using taboo topics, dark humor, absurd violence, or intentionally provocative and potentially offensive content."
+        # examples = [[294, 24, 337], [99,29,338]]
     else:
         raise ValueError(f"Invalid category: {category}")
     # relatable_examples = [174, 173, 172]
-    annotations = pd.read_csv("comprehensive_annotations.csv")
+    # annotations = pd.read_csv("comprehensive_annotations.csv")
 
-
-    positive_examples = ""
-    negative_examples = ""
-    for i in range(len(examples[0])):
-        # Add the description, caption, and explanation to the examples. the number in the list is the index, found in the "idx" column
-        row = annotations[annotations["idx"] == examples[0][i]].iloc[0]
-        positive_examples += f"DESCRIPTION: {row['description']}\nCAPTION: {row['caption']}\nELEMENT: {row['element']}"
-    for i in range(len(examples[1])):
-        row = annotations[annotations["idx"] == examples[1][i]].iloc[0]
-        negative_examples += f"DESCRIPTION: {row['description']}\nCAPTION: {row['caption']}\nELEMENT: {row['element']}"
+    # positive_examples = ""
+    # negative_examples = ""
+    # for i in range(len(examples[0])):
+    #     # Add the description, caption, and explanation to the examples. the number in the list is the index, found in the "idx" column
+    #     row = annotations[annotations["idx"] == examples[0][i]].iloc[0]
+    #     positive_examples += f"DESCRIPTION: {row['description']}\nCAPTION: {row['caption']}\nELEMENT: {row['element']}"
+    # for i in range(len(examples[1])):
+    #     row = annotations[annotations["idx"] == examples[1][i]].iloc[0]
+    #     negative_examples += f"DESCRIPTION: {row['description']}\nCAPTION: {row['caption']}\nELEMENT: {row['element']}"
     return f"""
 You are a humor expert extraordinaire. You will be given a cartoon and its associated caption, along with ONE element of *why* the caption is funny. Your job is to indicate whether the selected element belongs to this category.
 
 CATEGORY: {category}
-
-Here are some examples of captions in this category:
-
-POSITIVE EXAMPLES:
-{positive_examples}
-
-NEGATIVE EXAMPLES:
-{negative_examples}
+CATEGORY DESCRIPTION: {description}
 
 
-YOUR TASK:
-DESCRIPTION: {description}
+CARTOON DESCRIPTION: {description}
 CAPTION: {caption}
-ELEMENT: {element}
+JOKE ELEMENT: {element}
 
 Strictly respond only with TRUE or FALSE.
 """
