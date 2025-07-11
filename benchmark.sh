@@ -22,11 +22,11 @@
 #     --run-name "claude_thinking_budget_16384"\
 #     --n-workers 5
 
-python main_benchmark.py \
-    --explainer-model "grok-4-0709" \
-    --autograder-model "gpt-4o" \
-    --run-name "grok_4_0709" \
-    --n-workers 2 \
+# python main_benchmark.py \
+#     --explainer-model "grok-4-0709" \
+#     --autograder-model "gpt-4o" \
+#     --run-name "grok_4_0709" \
+#     --n-workers 2 \
 
 # python main_benchmark.py \
 #     --explainer-model "o4-mini" \
@@ -74,8 +74,8 @@ python main_benchmark.py \
 #     done
 # done
 
-# python main_benchmark.py \
-#     --explainer-model "claude-sonnet-4-20250514" \
-#     --autograder-model "gpt-4o" \
-#     --run-name "claude-4-sonnet" \
-#     --n-workers 10 \
+python main_benchmark.py \
+    --explainer-model "claude-opus-4-20250514" \
+    --autograder-model "gpt-4o" \
+    --run-name "claude-opus-4" \
+    --n-workers 20 \

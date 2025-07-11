@@ -27,6 +27,7 @@ RUN_FILES_TO_ANALYZE = [
     # "../runs/main/20250409_234703_o3mini_explainer_vs_gpt4o_grader_exp-o3_mini_ag-gpt_4o.csv",
     "../runs/main/20250409_231147_claude_explainer_vs_gpt4o_grader_exp-claude_3_7_sonnet_latest_ag-gpt_4o.csv",
     "../runs/20250522_173648_claude-4-sonnet_exp-claude_sonnet_4_20250514_ag-gpt_4o.csv",
+    "../runs/main/20250710_195633_claude-opus-4_exp-claude_opus_4_20250514_ag-gpt_4o.csv",
     "../runs/main/20250512_100811_gemini_2.5_rerun_exp-gemini_2_5_pro_preview_03_25_ag-gpt_4o.csv",
     # "../runs/main/20250410_143220_gemini_explainer_vs_gpt4o_grader_exp-gemini_1_5_pro_ag-gpt_4o.csv",
     "../runs/main/20250416_102802_llama4_maverick_explainer_vs_gpt4o_grader_exp-meta_llama_Llama_4_Maverick_17B_128E_Instruct_FP8_ag-gpt_4o.csv",
@@ -81,8 +82,9 @@ MODEL_NICKNAMES = {
     "gpt-4o": "gpt-4o",
     "o4-mini": "o4-mini", # Base nickname for o4-mini
     "o3-mini": "o3-mini",
-    "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet",  # Updated default Claude nickname
-    "claude-sonnet-4-20250514": "Claude Sonnet 4", # Add nickname for claude-sonnet-4-20250514
+    "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet", 
+    "claude-sonnet-4-20250514": "Claude Sonnet 4", 
+    "claude-opus-4-20250514": "Claude Opus 4", 
     "gemini-2-5-pro-preview-03-25": "Gemini 2.5 pro",
     "gemini-2-5-flash-preview-04-17": "Gemini 2.5 flash",
     "gemini-1-5-pro": "Gemini 1.5 pro",
@@ -1202,6 +1204,7 @@ def generate_static_scatter_plots(run_output_dir, data_json_path):
         "o4-mini": (-85, 0),
         "Claude 3.7 Sonnet": (10, 10),
         "Claude Sonnet 4": (5, -25),
+        "Claude Opus 4": (-80, 10),
         "gpt-4o": (5, -20),
         "Gemini 2.5 pro": (-160, 10),
         "o3": (10, -5),

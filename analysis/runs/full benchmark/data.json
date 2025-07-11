@@ -190,6 +190,25 @@
         "lmarena_elo_score": 1439.0
     },
     {
+        "display_name": "Claude Opus 4",
+        "explainer_model": "claude-opus-4-20250514",
+        "autograder_model": "gpt-4o",
+        "pass_rate_per_row": 0.8489795918367347,
+        "pass_rate_per_caption_all": 0.7922077922077922,
+        "pass_rate_per_caption_some": 0.8609307359307358,
+        "total_cost": 9.2960825,
+        "explainer_cost": 8.25744,
+        "avg_cost_per_row": 0.018629423847695392,
+        "plot_color": "#e3c771",
+        "explainer_family": "anthropic",
+        "num_rows": 490,
+        "num_captions": 308,
+        "plot_label": "Claude Opus 4",
+        "gpqa_score": NaN,
+        "arc_agi_score": NaN,
+        "lmarena_elo_score": NaN
+    },
+    {
         "display_name": "o3",
         "explainer_model": "o3",
         "autograder_model": "gpt-4o",
