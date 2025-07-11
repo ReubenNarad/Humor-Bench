@@ -1,0 +1,16 @@
+Rank,Model,Overall (%),Hard Subset (%)
+1,Grok 4,87.4,50.0
+2,o3,86.6,43.4
+3,Claude Opus 4,84.9,42.3
+4,gemini-2.5-pro-preview-03-25,80.8,26.3
+5,Claude 3.7 Sonnet,80.4,21.2
+6,deepseek-ai/DeepSeek-R1,79.8,21.2
+7,Claude Sonnet 4,79.4,23.0
+8,o1,78.8,21.2
+9,o4-mini,77.4,21.2
+10,Grok 3,77.4,21.2
+11,gpt-4o,74.5,18.2
+12,Qwen 3,68.3,14.1
+13,meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8,66.7,23.2
+14,Qwen/Qwen2.5-72B-Instruct-Turbo,61.1,12.1
+15,Phi 4 Reasoning Plus,57.3,11.1

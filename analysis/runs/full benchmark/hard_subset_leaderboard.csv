@@ -1,0 +1,16 @@
+Rank,Model,Hard Questions Passed,Hard Questions Attempted,Hard Subset Score (%),Overall Score (%),Difference (%)
+1,Grok 4,50,100,50.0,87.4,-37.4
+2,o3,43,99,43.4,86.6,-43.2
+3,Claude Opus 4,41,97,42.3,84.9,-42.6
+4,gemini-2.5-pro-preview-03-25,26,99,26.3,80.8,-54.5
+5,meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8,23,99,23.2,66.7,-43.5
+6,Claude Sonnet 4,23,100,23.0,79.4,-56.4
+7,Claude 3.7 Sonnet,21,99,21.2,80.4,-59.2
+8,o4-mini,21,99,21.2,77.4,-56.2
+9,o1,21,99,21.2,78.8,-57.6
+10,deepseek-ai/DeepSeek-R1,21,99,21.2,79.8,-58.6
+11,Grok 3,21,99,21.2,77.4,-56.2
+12,gpt-4o,18,99,18.2,74.5,-56.3
+13,Qwen 3,14,99,14.1,68.3,-54.2
+14,Qwen/Qwen2.5-72B-Instruct-Turbo,12,99,12.1,61.1,-49.0
+15,Phi 4 Reasoning Plus,11,99,11.1,57.3,-46.2

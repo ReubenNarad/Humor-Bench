@@ -14,6 +14,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "Qwen 2.5 72B",
+        "wordplay_pass_rate_per_row": 0.7142857142857143,
+        "cultural_reference_pass_rate_per_row": 0.6010928961748634,
+        "toxic_or_shocking_pass_rate_per_row": 0.5897435897435898,
         "gpqa_score": NaN,
         "arc_agi_score": NaN,
         "lmarena_elo_score": NaN
@@ -33,6 +36,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "Llama 4 Maverick",
+        "wordplay_pass_rate_per_row": 0.7563025210084033,
+        "cultural_reference_pass_rate_per_row": 0.6666666666666666,
+        "toxic_or_shocking_pass_rate_per_row": 0.6794871794871795,
         "gpqa_score": 0.698,
         "arc_agi_score": 0.044,
         "lmarena_elo_score": 1271.0
@@ -52,6 +58,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "gpt-4o",
+        "wordplay_pass_rate_per_row": 0.7815126050420168,
+        "cultural_reference_pass_rate_per_row": 0.7759562841530054,
+        "toxic_or_shocking_pass_rate_per_row": 0.6923076923076923,
         "gpqa_score": NaN,
         "arc_agi_score": 0.05,
         "lmarena_elo_score": 1407.0
@@ -71,6 +80,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "o4-mini",
+        "wordplay_pass_rate_per_row": 0.8907563025210085,
+        "cultural_reference_pass_rate_per_row": 0.7650273224043715,
+        "toxic_or_shocking_pass_rate_per_row": 0.717948717948718,
         "gpqa_score": 0.814,
         "arc_agi_score": NaN,
         "lmarena_elo_score": NaN
@@ -90,6 +102,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "Grok 3",
+        "wordplay_pass_rate_per_row": 0.8571428571428571,
+        "cultural_reference_pass_rate_per_row": 0.7814207650273224,
+        "toxic_or_shocking_pass_rate_per_row": 0.7307692307692307,
         "gpqa_score": NaN,
         "arc_agi_score": NaN,
         "lmarena_elo_score": NaN
@@ -109,6 +124,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "o1",
+        "wordplay_pass_rate_per_row": 0.8319327731092437,
+        "cultural_reference_pass_rate_per_row": 0.8142076502732241,
+        "toxic_or_shocking_pass_rate_per_row": 0.8205128205128205,
         "gpqa_score": 0.78,
         "arc_agi_score": 0.31,
         "lmarena_elo_score": 1350.0
@@ -128,6 +146,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "Claude Sonnet 4",
+        "wordplay_pass_rate_per_row": 0.8487394957983193,
+        "cultural_reference_pass_rate_per_row": 0.8415300546448088,
+        "toxic_or_shocking_pass_rate_per_row": 0.8333333333333334,
         "gpqa_score": NaN,
         "arc_agi_score": NaN,
         "lmarena_elo_score": NaN
@@ -147,6 +168,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "DeepSeek R1",
+        "wordplay_pass_rate_per_row": 0.8571428571428571,
+        "cultural_reference_pass_rate_per_row": 0.7923497267759563,
+        "toxic_or_shocking_pass_rate_per_row": 0.7564102564102564,
         "gpqa_score": 0.715,
         "arc_agi_score": NaN,
         "lmarena_elo_score": NaN
@@ -166,6 +190,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "Claude 3.7 Sonnet",
+        "wordplay_pass_rate_per_row": 0.8403361344537815,
+        "cultural_reference_pass_rate_per_row": 0.8415300546448088,
+        "toxic_or_shocking_pass_rate_per_row": 0.8205128205128205,
         "gpqa_score": 0.797,
         "arc_agi_score": 0.14,
         "lmarena_elo_score": 1293.0
@@ -185,6 +212,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "Gemini 2.5 pro",
+        "wordplay_pass_rate_per_row": 0.8151260504201681,
+        "cultural_reference_pass_rate_per_row": 0.8142076502732241,
+        "toxic_or_shocking_pass_rate_per_row": 0.8333333333333334,
         "gpqa_score": 0.802,
         "arc_agi_score": 0.125,
         "lmarena_elo_score": 1439.0
@@ -204,6 +234,9 @@
         "num_rows": 490,
         "num_captions": 308,
         "plot_label": "Claude Opus 4",
+        "wordplay_pass_rate_per_row": 0.907563025210084,
+        "cultural_reference_pass_rate_per_row": 0.8516483516483516,
+        "toxic_or_shocking_pass_rate_per_row": 0.881578947368421,
         "gpqa_score": NaN,
         "arc_agi_score": NaN,
         "lmarena_elo_score": NaN
@@ -223,6 +256,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "o3",
+        "wordplay_pass_rate_per_row": 0.907563025210084,
+        "cultural_reference_pass_rate_per_row": 0.8633879781420765,
+        "toxic_or_shocking_pass_rate_per_row": 0.8589743589743589,
         "gpqa_score": 0.833,
         "arc_agi_score": 0.757,
         "lmarena_elo_score": 1413.0
@@ -242,6 +278,9 @@
         "num_rows": 499,
         "num_captions": 309,
         "plot_label": "Grok 4",
+        "wordplay_pass_rate_per_row": 0.9243697478991597,
+        "cultural_reference_pass_rate_per_row": 0.9016393442622951,
+        "toxic_or_shocking_pass_rate_per_row": 0.8589743589743589,
         "gpqa_score": NaN,
         "arc_agi_score": 0.66,
         "lmarena_elo_score": NaN
